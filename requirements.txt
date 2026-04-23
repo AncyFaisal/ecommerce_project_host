@@ -7,8 +7,10 @@ Pillow==11.3.0
 django-allauth==65.11.0
 razorpay==2.0.0
 paypalrestsdk==1.13.3
-# django-crispy-forms==2.1
 weasyprint==66.0
 cryptography==46.0.3
 python-dotenv==1.0.0
 resend==2.27.0
+django-mathfilters==1.0.0
+pytz==2024.1
+reportlab==4.2.2
