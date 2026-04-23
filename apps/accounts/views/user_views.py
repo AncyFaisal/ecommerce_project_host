@@ -107,9 +107,22 @@ def generate_and_send_otp(email: str, username: str, purpose: str, ttl_seconds: 
 
     html_body = render_to_string(template, ctx)
 
-    msg = EmailMultiAlternatives(subject, "", settings.DEFAULT_FROM_EMAIL, [email])
-    msg.attach_alternative(html_body, "text/html")
-    msg.send()
+    try:
+        # Try Resend HTTP API first (works even when SMTP ports are blocked)
+        import resend
+        resend.api_key = settings.RESEND_API_KEY
+        resend.Emails.send({
+            "from": settings.DEFAULT_FROM_EMAIL,
+            "to": [email],
+            "subject": subject,
+            "html": html_body,
+        })
+    except Exception:
+        # Fallback to SMTP
+        from django.core.mail import EmailMultiAlternatives
+        msg = EmailMultiAlternatives(subject, "", settings.DEFAULT_FROM_EMAIL, [email])
+        msg.attach_alternative(html_body, "text/html")
+        msg.send()
 
     return otp
 # def generate_and_send_otp(email: str, purpose: str, ttl_seconds: int = 120) -> int:
