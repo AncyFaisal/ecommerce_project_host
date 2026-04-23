@@ -1,0 +1,489 @@
+<!-- user_address_form.html -->
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<style>
+    .address-card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(67, 20, 5, 0.1);
+    }
+    .address-card .card-header {
+        background: linear-gradient(135deg, #431405 0%, #2c0d03 100%);
+        color: #fff;
+        border-radius: 12px 12px 0 0;
+        padding: 18px 24px;
+    }
+    .address-card .card-header h4 {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin: 0;
+    }
+    .address-card .card-body {
+        padding: 28px 28px 20px;
+    }
+
+    /* Field wrapper */
+    .field-wrap { margin-bottom: 18px; }
+    .field-wrap label {
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: #431405;
+        margin-bottom: 5px;
+        display: block;
+    }
+    .field-wrap .required-star { color: #D8000C; margin-left: 2px; }
+
+    /* Input states */
+    .form-control, .form-select {
+        border: 1.5px solid #ddd;
+        border-radius: 8px;
+        font-size: 0.88rem;
+        padding: 10px 13px;
+        transition: border-color 0.25s, box-shadow 0.25s;
+    }
+    .form-control:focus, .form-select:focus {
+        border-color: #431405;
+        box-shadow: 0 0 0 3px rgba(67, 20, 5, 0.08);
+        outline: none;
+    }
+    .form-control.is-valid   { border-color: #2D7A2D !important; box-shadow: 0 0 0 3px rgba(45,122,45,0.08) !important; }
+    .form-control.is-invalid { border-color: #D8000C !important; box-shadow: 0 0 0 3px rgba(216,0,12,0.08) !important; }
+    .form-select.is-invalid  { border-color: #D8000C !important; box-shadow: 0 0 0 3px rgba(216,0,12,0.08) !important; }
+
+    /* Error / hint text */
+    .field-error {
+        font-size: 0.75rem;
+        color: #D8000C;
+        margin-top: 4px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .field-error i { font-size: 0.7rem; }
+    .field-hint {
+        font-size: 0.73rem;
+        color: #888;
+        margin-top: 3px;
+    }
+
+    /* Section divider */
+    .section-label {
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        color: #888;
+        margin: 22px 0 12px;
+        padding-bottom: 6px;
+        border-bottom: 1px solid #f0e8e4;
+    }
+
+    /* Buttons */
+    .btn-save {
+        background: linear-gradient(135deg, #431405 0%, #2c0d03 100%);
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        padding: 11px 28px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+    .btn-save:hover { opacity: 0.9; transform: translateY(-1px); color: #fff; }
+    .btn-cancel-addr {
+        background: #f0ebe8;
+        color: #431405;
+        border: none;
+        border-radius: 8px;
+        padding: 11px 28px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        transition: all 0.3s;
+        text-decoration: none;
+    }
+    .btn-cancel-addr:hover { background: #e0d8d4; color: #431405; }
+
+    /* Default checkbox */
+    .default-check-wrap {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: #fdf8f6;
+        border: 1.5px solid #f0e8e4;
+        border-radius: 8px;
+        padding: 12px 16px;
+        margin-bottom: 22px;
+    }
+    .default-check-wrap label { margin: 0; font-size: 0.88rem; color: #431405; font-weight: 500; cursor: pointer; }
+    .form-check-input:checked { background-color: #431405; border-color: #431405; }
+</style>
+
+<div class="container mt-4 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-7">
+            <div class="card address-card">
+                <div class="card-header">
+                    <h4>
+                        <i class="fas fa-map-marker-alt me-2"></i>
+                        {% if address %}Edit Address{% else %}Add New Address{% endif %}
+                    </h4>
+                </div>
+                <div class="card-body">
+
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger py-2 mb-3" style="font-size:0.85rem;">
+                            {% for error in form.non_field_errors %}
+                                <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+                    <form method="POST" id="addressForm" novalidate>
+                        {% csrf_token %}
+
+                        <!-- ── Contact Info ─────────────────────────────── -->
+                        <div class="section-label">Contact Information</div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="field-wrap">
+                                    <label for="{{ form.full_name.id_for_label }}">
+                                        Full Name <span class="required-star">*</span>
+                                    </label>
+                                    <input type="text"
+                                           id="{{ form.full_name.id_for_label }}"
+                                           name="full_name"
+                                           class="form-control {% if form.full_name.errors %}is-invalid{% endif %}"
+                                           placeholder="Full Name"
+                                           value="{{ form.full_name.value|default:'' }}"
+                                           maxlength="100">
+                                    {% if form.full_name.errors %}
+                                        {% for error in form.full_name.errors %}
+                                            <div class="field-error"><i class="fas fa-exclamation-circle"></i>{{ error }}</div>
+                                        {% endfor %}
+                                    {% else %}
+                                        <div class="field-error" id="full_name-error" style="display:none;"></div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="field-wrap">
+                                    <label for="{{ form.address_type.id_for_label }}">
+                                        Address Type <span class="required-star">*</span>
+                                    </label>
+                                    {{ form.address_type }}
+                                    {% if form.address_type.errors %}
+                                        {% for error in form.address_type.errors %}
+                                            <div class="field-error"><i class="fas fa-exclamation-circle"></i>{{ error }}</div>
+                                        {% endfor %}
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="field-wrap">
+                            <label for="{{ form.phone.id_for_label }}">
+                                Phone Number <span class="required-star">*</span>
+                            </label>
+                            <input type="tel"
+                                   id="{{ form.phone.id_for_label }}"
+                                   name="phone"
+                                   class="form-control {% if form.phone.errors %}is-invalid{% endif %}"
+                                   placeholder="10-digit mobile number"
+                                   value="{{ form.phone.value|default:'' }}"
+                                   maxlength="10">
+                            {% if form.phone.errors %}
+                                {% for error in form.phone.errors %}
+                                    <div class="field-error"><i class="fas fa-exclamation-circle"></i>{{ error }}</div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="field-error" id="phone-error" style="display:none;"></div>
+                            {% endif %}
+                            <div class="field-hint">Indian mobile number starting with 6, 7, 8, or 9</div>
+                        </div>
+
+                        <!-- ── Address Details ─────────────────────────── -->
+                        <div class="section-label">Address Details</div>
+
+                        <div class="field-wrap">
+                            <label for="{{ form.address_line1.id_for_label }}">
+                                Address Line 1 <span class="required-star">*</span>
+                            </label>
+                            <input type="text"
+                                   id="{{ form.address_line1.id_for_label }}"
+                                   name="address_line1"
+                                   class="form-control {% if form.address_line1.errors %}is-invalid{% endif %}"
+                                   placeholder="House / Flat no., Street, Area"
+                                   value="{{ form.address_line1.value|default:'' }}"
+                                   maxlength="255">
+                            {% if form.address_line1.errors %}
+                                {% for error in form.address_line1.errors %}
+                                    <div class="field-error"><i class="fas fa-exclamation-circle"></i>{{ error }}</div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="field-error" id="address_line1-error" style="display:none;"></div>
+                            {% endif %}
+                        </div>
+
+                        <div class="field-wrap">
+                            <label for="{{ form.address_line2.id_for_label }}">Address Line 2</label>
+                            <input type="text"
+                                   id="{{ form.address_line2.id_for_label }}"
+                                   name="address_line2"
+                                   class="form-control"
+                                   placeholder="Apartment, Colony (optional)"
+                                   value="{{ form.address_line2.value|default:'' }}"
+                                   maxlength="255">
+                        </div>
+
+                        <div class="field-wrap">
+                            <label for="{{ form.landmark.id_for_label }}">Landmark</label>
+                            <input type="text"
+                                   id="{{ form.landmark.id_for_label }}"
+                                   name="landmark"
+                                   class="form-control"
+                                   placeholder="Nearby landmark (optional)"
+                                   value="{{ form.landmark.value|default:'' }}"
+                                   maxlength="255">
+                            <div class="field-hint">Helps delivery partners find your location easily</div>
+                        </div>
+
+                        <!-- ── City / State / PIN ──────────────────────── -->
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="field-wrap">
+                                    <label for="{{ form.city.id_for_label }}">
+                                        City <span class="required-star">*</span>
+                                    </label>
+                                    <input type="text"
+                                           id="{{ form.city.id_for_label }}"
+                                           name="city"
+                                           class="form-control {% if form.city.errors %}is-invalid{% endif %}"
+                                           placeholder="City"
+                                           value="{{ form.city.value|default:'' }}"
+                                           maxlength="100">
+                                    {% if form.city.errors %}
+                                        {% for error in form.city.errors %}
+                                            <div class="field-error"><i class="fas fa-exclamation-circle"></i>{{ error }}</div>
+                                        {% endfor %}
+                                    {% else %}
+                                        <div class="field-error" id="city-error" style="display:none;"></div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="col-md-4">
+                                <div class="field-wrap">
+                                    <label for="{{ form.state.id_for_label }}">
+                                        State <span class="required-star">*</span>
+                                    </label>
+                                    <input type="text"
+                                           id="{{ form.state.id_for_label }}"
+                                           name="state"
+                                           class="form-control {% if form.state.errors %}is-invalid{% endif %}"
+                                           placeholder="State"
+                                           value="{{ form.state.value|default:'' }}"
+                                           maxlength="100">
+                                    {% if form.state.errors %}
+                                        {% for error in form.state.errors %}
+                                            <div class="field-error"><i class="fas fa-exclamation-circle"></i>{{ error }}</div>
+                                        {% endfor %}
+                                    {% else %}
+                                        <div class="field-error" id="state-error" style="display:none;"></div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="col-md-4">
+                                <div class="field-wrap">
+                                    <label for="{{ form.postal_code.id_for_label }}">
+                                        PIN Code <span class="required-star">*</span>
+                                    </label>
+                                    <input type="text"
+                                           id="{{ form.postal_code.id_for_label }}"
+                                           name="postal_code"
+                                           class="form-control {% if form.postal_code.errors %}is-invalid{% endif %}"
+                                           placeholder="6-digit PIN code"
+                                           value="{{ form.postal_code.value|default:'' }}"
+                                           maxlength="6">
+                                    {% if form.postal_code.errors %}
+                                        {% for error in form.postal_code.errors %}
+                                            <div class="field-error"><i class="fas fa-exclamation-circle"></i>{{ error }}</div>
+                                        {% endfor %}
+                                    {% else %}
+                                        <div class="field-error" id="postal_code-error" style="display:none;"></div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="field-wrap">
+                            <label for="{{ form.country.id_for_label }}">
+                                Country <span class="required-star">*</span>
+                            </label>
+                            <input type="text"
+                                   id="{{ form.country.id_for_label }}"
+                                   name="country"
+                                   class="form-control {% if form.country.errors %}is-invalid{% endif %}"
+                                   placeholder="Country"
+                                   value="{{ form.country.value|default:'India' }}"
+                                   maxlength="100">
+                            {% if form.country.errors %}
+                                {% for error in form.country.errors %}
+                                    <div class="field-error"><i class="fas fa-exclamation-circle"></i>{{ error }}</div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="field-error" id="country-error" style="display:none;"></div>
+                            {% endif %}
+                        </div>
+
+                        <!-- ── Default toggle ──────────────────────────── -->
+                        <div class="default-check-wrap">
+                            {{ form.is_default }}
+                            <label for="{{ form.is_default.id_for_label }}">
+                                <i class="fas fa-star me-1" style="color:#D4AF37;font-size:0.85rem;"></i>
+                                Set as my default address
+                            </label>
+                        </div>
+
+                        <!-- ── Actions ─────────────────────────────────── -->
+                        <div class="d-flex gap-3 justify-content-end">
+                            <a href="{% url 'user_address_list' %}" class="btn-cancel-addr">Cancel</a>
+                            <button type="submit" class="btn-save">
+                                <i class="fas fa-check me-1"></i>
+                                {% if address %}Update Address{% else %}Save Address{% endif %}
+                            </button>
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ── Helpers ──────────────────────────────────────────────────────────────────
+function showError(inputEl, errorEl, msg) {
+    inputEl.classList.remove('is-valid');
+    inputEl.classList.add('is-invalid');
+    if (errorEl) {
+        errorEl.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + msg;
+        errorEl.style.display = 'flex';
+    }
+}
+function showValid(inputEl, errorEl) {
+    inputEl.classList.remove('is-invalid');
+    inputEl.classList.add('is-valid');
+    if (errorEl) { errorEl.style.display = 'none'; }
+}
+function clearState(inputEl, errorEl) {
+    inputEl.classList.remove('is-valid', 'is-invalid');
+    if (errorEl) { errorEl.style.display = 'none'; }
+}
+
+// ── Field references ─────────────────────────────────────────────────────────
+const fields = {
+    full_name:     { el: document.getElementById('id_full_name'),     err: document.getElementById('full_name-error') },
+    phone:         { el: document.getElementById('id_phone'),         err: document.getElementById('phone-error') },
+    address_line1: { el: document.getElementById('id_address_line1'), err: document.getElementById('address_line1-error') },
+    city:          { el: document.getElementById('id_city'),          err: document.getElementById('city-error') },
+    state:         { el: document.getElementById('id_state'),         err: document.getElementById('state-error') },
+    postal_code:   { el: document.getElementById('id_postal_code'),   err: document.getElementById('postal_code-error') },
+    country:       { el: document.getElementById('id_country'),       err: document.getElementById('country-error') },
+};
+
+// ── Validators ───────────────────────────────────────────────────────────────
+const validators = {
+    full_name(val) {
+        if (!val) return 'Full name is required.';
+        if (val.length < 3) return 'Full name must be at least 3 characters.';
+        if (val.length > 100) return 'Full name cannot exceed 100 characters.';
+        if (!/^[a-zA-Z\s.\-']+$/.test(val)) return "Only letters, spaces, hyphens, apostrophes, and dots allowed.";
+        return null;
+    },
+    phone(val) {
+        if (!val) return 'Phone number is required.';
+        if (!/^\d+$/.test(val)) return 'Phone number must contain digits only.';
+        if (val.length !== 10) return 'Phone number must be exactly 10 digits.';
+        if (!/^[6-9]\d{9}$/.test(val)) return 'Must start with 6, 7, 8, or 9.';
+        return null;
+    },
+    address_line1(val) {
+        if (!val) return 'Address Line 1 is required.';
+        return null;
+    },
+    city(val) {
+        if (!val) return 'City is required.';
+        if (val.length < 2) return 'City name must be at least 2 characters.';
+        if (!/^[a-zA-Z\s\-.]+$/.test(val)) return 'City name can only contain letters, spaces, hyphens, and dots.';
+        return null;
+    },
+    state(val) {
+        if (!val) return 'State is required.';
+        if (val.length < 2) return 'State name must be at least 2 characters.';
+        if (!/^[a-zA-Z\s\-.]+$/.test(val)) return 'State name can only contain letters, spaces, hyphens, and dots.';
+        return null;
+    },
+    postal_code(val) {
+        if (!val) return 'PIN code is required.';
+        if (!/^\d+$/.test(val)) return 'PIN code must contain digits only.';
+        if (val.length !== 6) return 'PIN code must be exactly 6 digits.';
+        if (val[0] === '0') return 'PIN code cannot start with 0.';
+        return null;
+    },
+    country(val) {
+        if (!val) return 'Country is required.';
+        if (val.length < 2) return 'Country name must be at least 2 characters.';
+        if (!/^[a-zA-Z\s\-.]+$/.test(val)) return 'Country name can only contain letters, spaces, hyphens, and dots.';
+        return null;
+    },
+};
+
+// ── Attach live validation ───────────────────────────────────────────────────
+Object.keys(fields).forEach(key => {
+    const { el, err } = fields[key];
+    if (!el) return;
+
+    // Block non-digit input for phone and postal_code
+    if (key === 'phone' || key === 'postal_code') {
+        el.addEventListener('keypress', e => { if (!/\d/.test(e.key)) e.preventDefault(); });
+    }
+
+    el.addEventListener('input', () => {
+        const val = el.value.trim();
+        if (!val) { clearState(el, err); return; }
+        const msg = validators[key](val);
+        msg ? showError(el, err, msg) : showValid(el, err);
+    });
+
+    el.addEventListener('blur', () => {
+        const val = el.value.trim();
+        const msg = validators[key](val);
+        msg ? showError(el, err, msg) : showValid(el, err);
+    });
+});
+
+// ── Form submit guard ────────────────────────────────────────────────────────
+document.getElementById('addressForm').addEventListener('submit', function(e) {
+    let valid = true;
+    Object.keys(fields).forEach(key => {
+        const { el, err } = fields[key];
+        if (!el) return;
+        const msg = validators[key](el.value.trim());
+        if (msg) { showError(el, err, msg); valid = false; }
+        else { showValid(el, err); }
+    });
+    if (!valid) {
+        e.preventDefault();
+        // Scroll to first error
+        const firstInvalid = document.querySelector('.is-invalid');
+        if (firstInvalid) firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+});
+</script>
+{% endblock %}

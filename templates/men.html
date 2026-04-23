@@ -1,0 +1,845 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load offer_tags %}
+
+{% block title %}Men's Fragrances - Sanjeri{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/product_card.css' %}">
+<style>
+  :root {
+    --primary-color: #431405;
+    --background-color: #fff8f5;
+  }
+  
+  .banner-section {
+    margin-top: 20px;
+    border-radius: 8px;
+    overflow: hidden;
+    height: 400px;
+    width: 100%;
+  }
+
+  .carousel-image {
+    height: 100%;
+    object-fit: cover;
+    width: 100%;
+  }
+
+  .filter-sort-section {
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    margin-bottom: 25px;
+  }
+
+  .section-title {
+    color: #431405;
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+    position: relative;
+    padding-bottom: 14px;
+  }
+
+  .section-title::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 50px;
+    height: 3px;
+    background: #c7a17a;
+    border-radius: 2px;
+  }
+
+  .product-section {
+    padding: 40px 0 60px;
+  }
+
+  .sort-select {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 6px 10px;
+    background: white;
+    font-size: 0.9rem;
+  }
+
+  .filter-btn {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    transition: background 0.3s;
+    font-size: 0.9rem;
+  }
+
+  .filter-btn:hover {
+    background: #2c0d03;
+  }
+
+  .active-filters {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+  }
+
+  .active-filters .badge {
+    font-size: 0.8rem;
+    padding: 6px 10px;
+  }
+
+
+  /* Notification styles */
+  .notification {
+    position: fixed;
+    top: 100px;
+    right: 20px;
+    padding: 15px 20px;
+    border-radius: 5px;
+    color: white;
+    z-index: 9999;
+    max-width: 300px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    transform: translateX(400px);
+    transition: transform 0.3s ease;
+  }
+
+  .notification.show {
+    transform: translateX(0);
+  }
+
+  .notification.success {
+    background-color: #28a745;
+  }
+
+  .notification.error {
+    background-color: #dc3545;
+  }
+
+  .notification.info {
+    background-color: #17a2b8;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb -->
+<div class="container mt-3">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{% url 'homepage' %}">Home</a></li>
+      <li class="breadcrumb-item active" aria-current="page">Men</li>
+    </ol>
+  </nav>
+</div>
+
+<!-- Banner Section - Image Only -->
+<div class="container">
+  <div class="banner-section">
+    <img src="/media/products/Banner-AO-For-Him.jpg"
+         onerror="this.src='/media/products/home-Unisex-banner.jpg'; this.onerror=null;"
+         class="d-block w-100 carousel-image" alt="Men's Fragrance Collection" 
+         style="border-radius: 8px;">
+  </div>
+</div>
+
+<!-- Search Section -->
+<div class="container mt-4">
+  <div class="search-section bg-light p-4 rounded">
+    <form method="GET" action="" id="search-form" class="row g-3 align-items-center">
+      <input type="hidden" name="gender" value="Male">
+      <input type="hidden" name="sort" id="search-sort" value="{{ sort_by }}">
+      <input type="hidden" name="price_range" id="search-price_range" value="{{ active_filters.price_range }}">
+      <input type="hidden" name="fragrance_type" id="search-fragrance_type" value="{{ active_filters.fragrance_type }}">
+      <input type="hidden" name="occasion" id="search-occasion" value="{{ active_filters.occasion }}">
+      <input type="hidden" name="volume" id="search-volume" value="{{ active_filters.volume }}">
+      <input type="hidden" name="category" id="search-category" value="{{ category_filter }}">
+
+      <div class="col-md-8">
+        <div class="input-group">
+          <input type="text"
+                 name="q"
+                 id="search-input"
+                 class="form-control"
+                 placeholder="Search men's fragrances by name, brand, type..."
+                 value="{{ search_query|default:'' }}"
+                 autocomplete="off">
+          <button class="btn btn-primary" type="submit">
+            <i class="fas fa-search"></i> Search
+          </button>
+        </div>
+      </div>
+      <div class="col-md-4">
+        {% if search_query %}
+        <div class="d-flex justify-content-between align-items-center">
+          <span class="text-muted small">
+            <strong>{{ products_count }}</strong> result{{ products_count|pluralize }} for "{{ search_query }}"
+          </span>
+          <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearSearch()">
+            <i class="fas fa-times me-1"></i>Clear
+          </button>
+        </div>
+        {% else %}
+        <span class="text-muted small">{{ products_count }} product{{ products_count|pluralize }} found</span>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Filter and Sort Section -->
+<div class="container mt-4">
+  <div class="filter-sort-section">
+    <div class="row align-items-center">
+      <div class="col-md-6">
+        <div class="sort-options">
+          <label for="sort-by" class="me-2 fw-medium">Sort by:</label>
+          <select class="sort-select" id="sort-by" onchange="updateSort(this.value)">
+            <option value="featured" {% if sort_by == 'featured' or not sort_by %}selected{% endif %}>Featured</option>
+            <option value="best-selling" {% if sort_by == 'best-selling' %}selected{% endif %}>Best Selling</option>
+            <option value="price-low-high" {% if sort_by == 'price-low-high' %}selected{% endif %}>Price: Low → High</option>
+            <option value="price-high-low" {% if sort_by == 'price-high-low' %}selected{% endif %}>Price: High → Low</option>
+            <option value="newest" {% if sort_by == 'newest' %}selected{% endif %}>Newest Arrivals</option>
+            <option value="customer-rating" {% if sort_by == 'customer-rating' %}selected{% endif %}>Customer Rating: High → Low</option>
+            <option value="alphabetical-az" {% if sort_by == 'alphabetical-az' %}selected{% endif %}>Alphabetical: A → Z</option>
+            <option value="alphabetical-za" {% if sort_by == 'alphabetical-za' %}selected{% endif %}>Alphabetical: Z → A</option>
+          </select>
+        </div>
+      </div>
+      <div class="col-md-6 text-md-end mt-3 mt-md-0">
+        <div class="filter-options">
+          {% if search_query or sort_by and sort_by != 'featured' or active_filters.price_range or active_filters.fragrance_type or active_filters.occasion or active_filters.volume or category_filter %}
+          <button type="button" class="btn btn-outline-secondary me-2" onclick="clearAllFilters()">
+            <i class="fas fa-times me-1"></i>Clear All
+          </button>
+          {% endif %}
+          <button type="button" class="filter-btn" data-bs-toggle="modal" data-bs-target="#filterModal">
+            <i class="fas fa-filter me-2"></i>Filter
+            {% if active_filters.price_range or active_filters.fragrance_type or active_filters.occasion or active_filters.volume or category_filter %}
+            <span class="badge bg-warning text-dark ms-1">●</span>
+            {% endif %}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Filter Modal -->
+<div class="modal fade" id="filterModal" tabindex="-1" aria-labelledby="filterModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="filterModalLabel"><i class="fas fa-filter me-2"></i>Filter Men's Products</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row">
+          <!-- Price Range -->
+          <div class="col-md-6 mb-4">
+            <h6 class="fw-bold mb-3">Price Range</h6>
+            <div class="form-check"><input class="form-check-input" type="radio" name="m_price_range" id="m-pr-all" value="" {% if not active_filters.price_range %}checked{% endif %}><label class="form-check-label" for="m-pr-all">All Prices</label></div>
+            <div class="form-check"><input class="form-check-input" type="radio" name="m_price_range" id="m-pr-u1k" value="under-1000" {% if active_filters.price_range == 'under-1000' %}checked{% endif %}><label class="form-check-label" for="m-pr-u1k">Under ₹1,000</label></div>
+            <div class="form-check"><input class="form-check-input" type="radio" name="m_price_range" id="m-pr-1-2" value="1000-2000" {% if active_filters.price_range == '1000-2000' %}checked{% endif %}><label class="form-check-label" for="m-pr-1-2">₹1,000 – ₹2,000</label></div>
+            <div class="form-check"><input class="form-check-input" type="radio" name="m_price_range" id="m-pr-2-3" value="2000-3000" {% if active_filters.price_range == '2000-3000' %}checked{% endif %}><label class="form-check-label" for="m-pr-2-3">₹2,000 – ₹3,000</label></div>
+            <div class="form-check"><input class="form-check-input" type="radio" name="m_price_range" id="m-pr-3-5" value="3000-5000" {% if active_filters.price_range == '3000-5000' %}checked{% endif %}><label class="form-check-label" for="m-pr-3-5">₹3,000 – ₹5,000</label></div>
+            <div class="form-check"><input class="form-check-input" type="radio" name="m_price_range" id="m-pr-5p" value="above-5000" {% if active_filters.price_range == 'above-5000' %}checked{% endif %}><label class="form-check-label" for="m-pr-5p">Above ₹5,000</label></div>
+          </div>
+          <!-- Volume -->
+          <div class="col-md-6 mb-4">
+            <h6 class="fw-bold mb-3">Volume (ml)</h6>
+            <div class="form-check"><input class="form-check-input" type="radio" name="m_volume" id="m-vol-all" value="" {% if not active_filters.volume %}checked{% endif %}><label class="form-check-label" for="m-vol-all">All Volumes</label></div>
+            {% for vol in available_volumes %}
+            <div class="form-check"><input class="form-check-input" type="radio" name="m_volume" id="m-vol-{{ vol }}" value="{{ vol }}" {% if active_filters.volume == vol|stringformat:"s" %}checked{% endif %}><label class="form-check-label" for="m-vol-{{ vol }}">{{ vol }} ml</label></div>
+            {% endfor %}
+          </div>
+          <!-- Fragrance Type -->
+          <div class="col-md-6 mb-4">
+            <h6 class="fw-bold mb-3">Fragrance Type</h6>
+            <div class="form-check"><input class="form-check-input" type="radio" name="m_fragrance_type" id="m-frag-all" value="" {% if not active_filters.fragrance_type %}checked{% endif %}><label class="form-check-label" for="m-frag-all">All Types</label></div>
+            {% for frag in available_fragrance_types %}
+            <div class="form-check"><input class="form-check-input" type="radio" name="m_fragrance_type" id="m-frag-{{ frag|slugify }}" value="{{ frag }}" {% if active_filters.fragrance_type == frag %}checked{% endif %}><label class="form-check-label" for="m-frag-{{ frag|slugify }}">{{ frag }}</label></div>
+            {% endfor %}
+          </div>
+          <!-- Occasion -->
+          <div class="col-md-6 mb-4">
+            <h6 class="fw-bold mb-3">Occasion</h6>
+            <div class="form-check"><input class="form-check-input" type="radio" name="m_occasion" id="m-occ-all" value="" {% if not active_filters.occasion %}checked{% endif %}><label class="form-check-label" for="m-occ-all">All Occasions</label></div>
+            {% for occ in available_occasions %}
+            <div class="form-check"><input class="form-check-input" type="radio" name="m_occasion" id="m-occ-{{ occ|slugify }}" value="{{ occ }}" {% if active_filters.occasion == occ %}checked{% endif %}><label class="form-check-label" for="m-occ-{{ occ|slugify }}">{{ occ }}</label></div>
+            {% endfor %}
+          </div>
+          <!-- Category -->
+          <div class="col-12 mb-2">
+            <h6 class="fw-bold mb-3">Category</h6>
+            <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="m_category" id="m-cat-all" value="" {% if not category_filter %}checked{% endif %}><label class="form-check-label" for="m-cat-all">All</label></div>
+            {% for cat in available_categories %}
+            <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="m_category" id="m-cat-{{ cat.id }}" value="{{ cat.name }}" {% if category_filter == cat.name %}checked{% endif %}><label class="form-check-label" for="m-cat-{{ cat.id }}">{{ cat.name }}</label></div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" onclick="clearModalFilters()"><i class="fas fa-times me-1"></i>Reset</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="applyModalFilters()"><i class="fas fa-check me-1"></i>Apply Filters</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Active Filters Pills -->
+{% if search_query or active_filters.price_range or active_filters.fragrance_type or active_filters.occasion or active_filters.volume or category_filter %}
+<div class="container mb-3">
+  <div class="active-filters d-flex flex-wrap align-items-center gap-2">
+    <strong class="me-1 small">Active:</strong>
+    {% if search_query %}<span class="badge bg-primary">"{{ search_query }}" <a href="?gender=Male{% if sort_by and sort_by != 'featured' %}&sort={{ sort_by }}{% endif %}{% if active_filters.price_range %}&price_range={{ active_filters.price_range }}{% endif %}{% if active_filters.fragrance_type %}&fragrance_type={{ active_filters.fragrance_type }}{% endif %}{% if active_filters.occasion %}&occasion={{ active_filters.occasion }}{% endif %}{% if active_filters.volume %}&volume={{ active_filters.volume }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}" class="text-white ms-1">×</a></span>{% endif %}
+    {% if active_filters.price_range %}<span class="badge bg-secondary">₹ {{ active_filters.price_range }} <a href="?gender=Male{% if search_query %}&q={{ search_query }}{% endif %}{% if sort_by and sort_by != 'featured' %}&sort={{ sort_by }}{% endif %}{% if active_filters.fragrance_type %}&fragrance_type={{ active_filters.fragrance_type }}{% endif %}{% if active_filters.occasion %}&occasion={{ active_filters.occasion }}{% endif %}{% if active_filters.volume %}&volume={{ active_filters.volume }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}" class="text-white ms-1">×</a></span>{% endif %}
+    {% if active_filters.fragrance_type %}<span class="badge bg-secondary">{{ active_filters.fragrance_type }} <a href="?gender=Male{% if search_query %}&q={{ search_query }}{% endif %}{% if sort_by and sort_by != 'featured' %}&sort={{ sort_by }}{% endif %}{% if active_filters.price_range %}&price_range={{ active_filters.price_range }}{% endif %}{% if active_filters.occasion %}&occasion={{ active_filters.occasion }}{% endif %}{% if active_filters.volume %}&volume={{ active_filters.volume }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}" class="text-white ms-1">×</a></span>{% endif %}
+    {% if active_filters.occasion %}<span class="badge bg-secondary">{{ active_filters.occasion }} <a href="?gender=Male{% if search_query %}&q={{ search_query }}{% endif %}{% if sort_by and sort_by != 'featured' %}&sort={{ sort_by }}{% endif %}{% if active_filters.price_range %}&price_range={{ active_filters.price_range }}{% endif %}{% if active_filters.fragrance_type %}&fragrance_type={{ active_filters.fragrance_type }}{% endif %}{% if active_filters.volume %}&volume={{ active_filters.volume }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}" class="text-white ms-1">×</a></span>{% endif %}
+    {% if active_filters.volume %}<span class="badge bg-secondary">{{ active_filters.volume }}ml <a href="?gender=Male{% if search_query %}&q={{ search_query }}{% endif %}{% if sort_by and sort_by != 'featured' %}&sort={{ sort_by }}{% endif %}{% if active_filters.price_range %}&price_range={{ active_filters.price_range }}{% endif %}{% if active_filters.fragrance_type %}&fragrance_type={{ active_filters.fragrance_type }}{% endif %}{% if active_filters.occasion %}&occasion={{ active_filters.occasion }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}" class="text-white ms-1">×</a></span>{% endif %}
+    {% if category_filter %}<span class="badge bg-secondary">{{ category_filter }} <a href="?gender=Male{% if search_query %}&q={{ search_query }}{% endif %}{% if sort_by and sort_by != 'featured' %}&sort={{ sort_by }}{% endif %}{% if active_filters.price_range %}&price_range={{ active_filters.price_range }}{% endif %}{% if active_filters.fragrance_type %}&fragrance_type={{ active_filters.fragrance_type }}{% endif %}{% if active_filters.occasion %}&occasion={{ active_filters.occasion }}{% endif %}{% if active_filters.volume %}&volume={{ active_filters.volume }}{% endif %}" class="text-white ms-1">×</a></span>{% endif %}
+  </div>
+</div>
+{% endif %}
+
+<!-- Notification Container -->
+<div id="notification" class="notification"></div>
+
+<section class="product-section" id="products">
+  <div class="container">
+    <h2 class="section-title mb-4">Men's Collection</h2>
+    
+    <!-- Products count + Grid -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <p class="text-muted small mb-0">
+        {% if page_obj.paginator.count %}
+          Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }} products
+        {% endif %}
+      </p>
+    </div>
+    <div class="row row-cols-2 row-cols-sm-2 row-cols-md-3 row-cols-xl-4 g-4">
+      {% for variant in page_obj %}
+      <div class="col d-flex">
+        {% include 'includes/product_card.html' with variant=variant %}
+      </div>
+      {% empty %}
+      <div class="col-12 text-center py-5">
+        <i class="fas fa-box-open fa-4x text-muted mb-3"></i>
+        <p class="text-muted fs-5">No men's products available yet.</p>
+        <p class="text-muted">Check back later for new arrivals.</p>
+      </div>
+      {% endfor %}
+    </div>
+    
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+    <div class="row mt-5">
+      <div class="col-12">
+        <nav aria-label="Product pagination">
+          <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+              <li class="page-item">
+                <a class="page-link" href="?{% if request.GET.urlencode %}{{ request.GET.urlencode }}&{% endif %}page={{ page_obj.previous_page_number }}" aria-label="Previous">
+                  <i class="fas fa-chevron-left"></i>
+                </a>
+              </li>
+            {% else %}
+              <li class="page-item disabled">
+                <a class="page-link" href="#" tabindex="-1" aria-disabled="true">
+                  <i class="fas fa-chevron-left"></i>
+                </a>
+              </li>
+            {% endif %}
+            
+            {% for num in page_obj.paginator.page_range %}
+              {% if page_obj.number == num %}
+                <li class="page-item active">
+                  <span class="page-link">{{ num }}</span>
+                </li>
+              {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                <li class="page-item">
+                  <a class="page-link" href="?{% if request.GET.urlencode %}{{ request.GET.urlencode }}&{% endif %}page={{ num }}">{{ num }}</a>
+                </li>
+              {% endif %}
+            {% endfor %}
+            
+            {% if page_obj.has_next %}
+              <li class="page-item">
+                <a class="page-link" href="?{% if request.GET.urlencode %}{{ request.GET.urlencode }}&{% endif %}page={{ page_obj.next_page_number }}" aria-label="Next">
+                  <i class="fas fa-chevron-right"></i>
+                </a>
+              </li>
+            {% else %}
+              <li class="page-item disabled">
+                <a class="page-link" href="#" tabindex="-1" aria-disabled="true">
+                  <i class="fas fa-chevron-right"></i>
+                </a>
+              </li>
+            {% endif %}
+          </ul>
+        </nav>
+        
+        <!-- Page Info -->
+        <div class="text-center mt-2">
+          <p class="text-muted small">
+            Showing page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+          </p>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Filter and Sort Functions
+  function updateSort(sortValue) {
+    const url = new URL(window.location.href);
+    url.searchParams.delete('page');
+    url.searchParams.set('sort', sortValue || 'featured');
+    window.location.href = url.toString();
+  }
+
+  function applyModalFilters() {
+    const url = new URL(window.location.href);
+    url.searchParams.delete('page');
+
+    const mapping = {
+      'm_price_range': 'price_range',
+      'm_volume': 'volume',
+      'm_fragrance_type': 'fragrance_type',
+      'm_occasion': 'occasion',
+      'm_category': 'category',
+    };
+
+    Object.entries(mapping).forEach(([modalName, paramName]) => {
+      const checked = document.querySelector(`input[name="${modalName}"]:checked`);
+      if (checked && checked.value) {
+        url.searchParams.set(paramName, checked.value);
+      } else {
+        url.searchParams.delete(paramName);
+      }
+    });
+
+    const modal = bootstrap.Modal.getInstance(document.getElementById('filterModal'));
+    if (modal) modal.hide();
+    window.location.href = url.toString();
+  }
+
+  function clearModalFilters() {
+    const url = new URL(window.location.href);
+    ['price_range', 'fragrance_type', 'occasion', 'volume', 'category'].forEach(p => url.searchParams.delete(p));
+    url.searchParams.delete('page');
+    const modal = bootstrap.Modal.getInstance(document.getElementById('filterModal'));
+    if (modal) modal.hide();
+    window.location.href = url.toString();
+  }
+
+  function clearAllFilters() {
+    const url = new URL(window.location.href);
+    ['price_range', 'fragrance_type', 'occasion', 'volume', 'category', 'q', 'sort', 'page'].forEach(p => url.searchParams.delete(p));
+    window.location.href = url.toString();
+  }
+
+  function clearSearch() {
+    const url = new URL(window.location.href);
+    url.searchParams.delete('q');
+    url.searchParams.delete('page');
+    window.location.href = url.toString();
+  }
+
+  // ==================== CART FUNCTIONS ====================
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+
+  function showNotification(message, type = 'info') {
+    const notification = document.getElementById('notification');
+    if (notification) {
+      notification.textContent = message;
+      notification.className = `notification ${type}`;
+      notification.classList.add('show');
+      
+      setTimeout(() => {
+        notification.classList.remove('show');
+      }, 3000);
+    }
+  }
+
+  function updateCartBadge(count) {
+    const badges = document.querySelectorAll('.cart-count');
+    badges.forEach(badge => {
+      badge.textContent = count;
+      badge.style.display = count > 0 ? 'flex' : 'none';
+    });
+  }
+
+  async function checkCartForVariant(variantId, button) {
+    try {
+      const response = await fetch(`/cart/check-variant/${productId}/`);
+
+      if (response.redirected || response.url.includes('/user-login') || response.url.includes('/user_login')) {
+        localStorage.removeItem(`added_${variantId}`);
+        updateButtonToAddCart(button);
+        return;
+      }
+
+      if (response.ok) {
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          localStorage.removeItem(`added_${variantId}`);
+          updateButtonToAddCart(button);
+          return;
+        }
+        const data = await response.json();
+        if (data.in_cart) {
+          updateButtonToGoToCart(button);
+          localStorage.setItem(`added_${variantId}`, 'true');
+        } else {
+          updateButtonToAddCart(button);
+          localStorage.removeItem(`added_${variantId}`);
+        }
+      }
+    } catch (error) {
+      updateButtonToAddCart(button);
+      localStorage.removeItem(`added_${variantId}`);
+    }
+  }
+
+  function updateButtonToGoToCart(button) {
+    button.innerHTML = '<i class="fas fa-shopping-cart me-1"></i> Go to Cart';
+    button.classList.add('btn-success');
+    button.classList.remove('btn-add-cart-sm', 'btn-loading');
+    button.disabled = false;
+  }
+
+  function updateButtonToAddCart(button) {
+    button.innerHTML = '<i class="fas fa-shopping-cart me-1"></i> Add to Cart';
+    button.classList.remove('btn-success', 'btn-loading');
+    button.classList.add('btn-add-cart-sm');
+    button.disabled = false;
+  }
+
+  async function addToCart(variantId, productId, button) {
+    const originalText = button.innerHTML;
+    const originalClasses = button.className;
+    
+    // Show loading state with spinner
+    button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Adding...';
+    button.disabled = true;
+    
+    try {
+      const csrfToken = getCookie('csrftoken');
+      
+      const response = await fetch(`/cart/add/${variantId}/`, {
+        method: 'POST',
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-CSRFToken': csrfToken,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `quantity=1&csrfmiddlewaretoken=${csrfToken}`
+      });
+
+      if (response.redirected || response.url.includes('/user-login') || response.url.includes('/user_login')) {
+        button.innerHTML = originalText;
+        button.className = originalClasses;
+        button.disabled = false;
+        showNotification('Please login to add items to cart', 'info');
+        setTimeout(() => {
+          window.location.href = `/user-login/?next=${encodeURIComponent(window.location.pathname)}`;
+        }, 1500);
+        return;
+      }
+
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        button.innerHTML = originalText;
+        button.className = originalClasses;
+        button.disabled = false;
+        showNotification('Please login to add items to cart', 'info');
+        setTimeout(() => {
+          window.location.href = `/user-login/?next=${encodeURIComponent(window.location.pathname)}`;
+        }, 1500);
+        return;
+      }
+
+      const data = await response.json();
+      
+      if (data.success) {
+        // Update cart badge
+        updateCartBadge(data.cart_total_items);
+        
+        // Remove disabled state
+        button.disabled = false;
+        
+        // Change button to "Go to Cart"
+        button.innerHTML = '<i class="fas fa-shopping-cart me-1"></i> Go to Cart';
+        button.classList.add('btn-success');
+        button.classList.remove('btn-add-cart-sm', 'btn-loading');
+        
+        // Store in localStorage
+        localStorage.setItem(`added_${variantId}`, 'true');
+        
+        showNotification('Product added to cart!', 'success');
+        
+      } else {
+        // Restore original state
+        button.innerHTML = originalText;
+        button.className = originalClasses;
+        button.disabled = false;
+        
+        showNotification(data.message || 'Please select a variant first', 'info');
+        setTimeout(() => {
+          window.location.href = `/product/${productId}/`;
+        }, 1500);
+      }
+    } catch (error) {
+      console.error('Add to cart error:', error);
+      showNotification('Error adding to cart. Please try again.', 'error');
+      
+      // Restore original state on error
+      button.innerHTML = originalText;
+      button.className = originalClasses;
+      button.disabled = false;
+    }
+  }
+
+  function initializeCartButtons() {
+    // Handle add to cart button clicks
+    document.addEventListener('click', function(e) {
+      if (e.target.closest('.add-to-cart-btn')) {
+        e.preventDefault();
+        const button = e.target.closest('.add-to-cart-btn');
+        
+        // Check if button already says "Go to Cart"
+        if (button.textContent.includes('Go to Cart')) {
+          window.location.href = '/cart/';
+          return;
+        }
+        
+        const variantId = button.getAttribute('data-variant-id');
+            const productId = button.getAttribute('data-product-id');
+        
+        if (variantId) {
+          addToCart(variantId, productId, button);
+        } else {
+          window.location.href = `/product/${productId}/`;
+        }
+      }
+    });
+    
+    // Initialize button states on page load
+    document.querySelectorAll('.add-to-cart-btn').forEach(button => {
+      const variantId = button.getAttribute('data-variant-id');
+      const productId = button.getAttribute('data-product-id');
+      if (variantId) {
+        // First check localStorage for immediate feedback
+        if (variantId && localStorage.getItem(`added_${variantId}`)) {
+          updateButtonToGoToCart(button);
+        }
+        // Then check server for accurate state
+        checkCartForVariant(variantId, button);
+      }
+    });
+  }
+
+  // Listen for cart cleared events
+  window.addEventListener('storage', function(e) {
+    if (e.key === 'cart_cleared') {
+      // Reset all cart buttons on this page
+      document.querySelectorAll('.add-to-cart-btn').forEach(button => {
+        const variantId = button.getAttribute('data-variant-id');
+        const productId = button.getAttribute('data-product-id');
+        updateButtonToAddCart(button);
+        if (variantId) {
+          if (variantId) localStorage.removeItem(`added_${variantId}`);
+        }
+      });
+      // Update cart badge
+      updateCartBadge(0);
+    }
+  });
+
+  // Initial cart badge update
+  updateCartBadge({{ cart_item_count|default:0 }});
+
+
+function initializeWishlistButtons() {
+    console.log('Initializing wishlist buttons...');
+    
+    // Remove any existing event listeners and add new ones
+    document.querySelectorAll('.add-to-wishlist-btn').forEach(button => {
+        button.removeEventListener('click', handleWishlistClick);
+        button.addEventListener('click', handleWishlistClick);
+    });
+}
+
+async function handleWishlistClick(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const button = this;
+    const variantId = button.getAttribute('data-variant-id');
+    
+    if (!variantId) {
+        console.error('No variant ID found');
+        return;
+    }
+    
+    const icon = button.querySelector('i');
+    const isInWishlist = icon.classList.contains('fas');
+    const csrfToken = getCookie('csrftoken');
+    
+    // Show loading state
+    const originalIcon = icon.className;
+    icon.className = 'fas fa-spinner fa-spin';
+    button.disabled = true;
+    
+    try {
+        const url = isInWishlist ? `/wishlist/remove/${variantId}/` : `/wishlist/add/${variantId}/`;
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': csrfToken
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            if (isInWishlist) {
+                icon.className = 'far fa-heart';
+                localStorage.removeItem(`wishlist_variant_${variantId}`);
+                updateWishlistCount(-1);
+                showNotification('Removed from wishlist', 'success');
+            } else {
+                icon.className = 'fas fa-heart';
+                localStorage.setItem(`wishlist_variant_${variantId}`, 'true');
+                updateWishlistCount(1);
+                showNotification('Added to wishlist', 'success');
+            }
+        } else {
+            icon.className = originalIcon;
+            showNotification(data.message || 'Error updating wishlist', 'error');
+        }
+    } catch (error) {
+        console.error('Wishlist error:', error);
+        icon.className = originalIcon;
+        
+        if (error.status === 403 || error.status === 401) {
+            showNotification('Please login to use wishlist', 'error');
+            setTimeout(() => {
+                window.location.href = '/user-login/?next=' + encodeURIComponent(window.location.pathname);
+            }, 1500);
+        } else {
+            showNotification('Error updating wishlist', 'error');
+        }
+    } finally {
+        button.disabled = false;
+    }
+}
+
+function updateWishlistCount(change) {
+    const badge = document.querySelector('.wishlist-count');
+    if (badge) {
+        let currentCount = parseInt(badge.textContent) || 0;
+        currentCount += change;
+        if (currentCount < 0) currentCount = 0;
+        badge.textContent = currentCount;
+        badge.style.display = currentCount > 0 ? 'flex' : 'none';
+        
+        // Update localStorage
+        localStorage.setItem('wishlist_count', currentCount);
+    }
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    initializeWishlistButtons();
+    initializeCartButtons();
+    
+    // Fetch initial wishlist count if needed
+    const badge = document.querySelector('.wishlist-count');
+    if (badge && (!badge.textContent || badge.textContent === '0')) {
+        fetch('/wishlist/count/', {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.count > 0) {
+                badge.textContent = data.count;
+                badge.style.display = 'flex';
+            }
+        })
+        .catch(error => console.log('Could not fetch wishlist count'));
+    }
+});
+
+// Helper function to get cookie
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Show notification function
+function showNotification(message, type = 'info') {
+    let notification = document.getElementById('global-notification');
+    if (!notification) {
+        notification = document.createElement('div');
+        notification.id = 'global-notification';
+        notification.style.cssText = `
+            position: fixed;
+            top: 100px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 5px;
+            color: white;
+            z-index: 9999;
+            max-width: 300px;
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+        `;
+        document.body.appendChild(notification);
+    }
+    
+    notification.textContent = message;
+    notification.style.backgroundColor = type === 'success' ? '#28a745' : 
+                                        type === 'error' ? '#dc3545' : '#17a2b8';
+    notification.style.transform = 'translateX(0)';
+    
+    setTimeout(() => {
+        notification.style.transform = 'translateX(400px)';
+    }, 3000);
+}
+
+</script>
+{% endblock %}

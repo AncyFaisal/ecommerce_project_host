@@ -1,0 +1,71 @@
+# Python
+*.pyc
+__pycache__/
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Environment - NEVER commit secrets
+.env
+.env.local
+.env.*.local
+
+# Database
+*.sqlite3
+*.db
+db.sqlite3
+db.sqlite3-journal
+
+# Media files (user uploads)
+media/
+!media/.gitkeep
+
+# Static files (collected by collectstatic)
+staticfiles/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+ehthumbs.db
+
+# Logs
+*.log
+logs/
+
+# Testing
+.coverage
+htmlcov/
+
+# Django
+local_settings.py
+
+# Temporary
+temp/
+tmp/
+*.tmp
+*.temp
+
+# Kiro
+.kiro/
+
+# Product images in static (should be in media/)
+static/images/*.webp
+static/images/*.jpg
+static/images/*.jpeg
+static/images/*.png
+static/images/*.gif
+static/images/*.avif
+static/images/*_files/

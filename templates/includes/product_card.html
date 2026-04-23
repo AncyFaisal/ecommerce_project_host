@@ -1,0 +1,230 @@
+{% load offer_tags %}
+{% load static %}
+{% comment %}
+  Usage - variant-based (men/women/unisex):
+    {% include 'includes/product_card.html' with variant=variant %}
+  Usage - product-based (homepage):
+    {% include 'includes/product_card.html' with product=product use_product=True %}
+{% endcomment %}
+
+{% if use_product %}
+  {% with v=product.variants.first p=product %}
+  {% with best_offer=p|get_best_offer %}
+  <div class="pc-card position-relative">
+
+    {# --- Badges row --- #}
+    <div class="pc-badges">
+      {% if v %}
+        <span class="pc-badge-size">{{ v.volume_ml }}ml</span>
+      {% endif %}
+      {% if best_offer %}
+        {% if best_offer.discount_percentage > 0 %}
+          <span class="pc-badge-offer">{{ best_offer.discount_percentage|floatformat:0 }}% OFF</span>
+        {% elif best_offer.discount_fixed > 0 %}
+          <span class="pc-badge-offer">₹{{ best_offer.discount_fixed|floatformat:0 }} OFF</span>
+        {% endif %}
+      {% endif %}
+    </div>
+
+    {# --- Wishlist --- #}
+    {% if v.id in wishlist_variant_ids %}
+        {% include 'includes/wishlist_button.html' with variant=v is_in_wishlist=True %}
+    {% else %}
+        {% include 'includes/wishlist_button.html' with variant=v is_in_wishlist=False %}
+    {% endif %}
+
+    {# --- Image --- #}
+    <a href="{% url 'product_detail' p.id %}" class="pc-img-link">
+      {% if p.main_image %}
+        <img src="{{ p.main_image.url }}" class="pc-img" alt="{{ p.name }}">
+      {% else %}
+        <div class="pc-img-placeholder"><i class="fas fa-spray-can fa-2x text-muted"></i></div>
+      {% endif %}
+    </a>
+
+    {# --- Body --- #}
+    <div class="pc-body">
+      <a href="{% url 'product_detail' p.id %}" class="pc-name">{{ p.name }}</a>
+      <p class="pc-type">{{ p.fragrance_type|default:"Eau de Parfum" }}</p>
+
+      {# Ratings #}
+      <div class="pc-rating">
+        <div class="pc-stars">
+          {% if p.avg_rating %}
+            {% for i in "12345" %}
+              {% if forloop.counter <= p.avg_rating %}<i class="fas fa-star"></i>
+              {% elif forloop.counter|add:"-0.5" <= p.avg_rating %}<i class="fas fa-star-half-alt"></i>
+              {% else %}<i class="far fa-star"></i>{% endif %}
+            {% endfor %}
+          {% else %}
+            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i>
+          {% endif %}
+        </div>
+        <span class="pc-rating-count">({{ p.rating_count|default:"0" }})</span>
+      </div>
+
+      {# Price #}
+      <div class="pc-price">
+        {% if best_offer %}
+          {% with discount=v.display_price|get_offer_discount:p %}
+            {% with final=v.display_price|subtract:discount %}
+              <span class="pc-price-final">₹{{ final|floatformat:0 }}</span>
+              {% if v.discount_price and v.discount_price < v.price %}
+                <span class="pc-price-original">₹{{ v.discount_price|floatformat:0 }}</span>
+                <span class="pc-price-mrp text-muted" style="font-size:0.75rem; text-decoration:line-through;">MRP ₹{{ v.price|floatformat:0 }}</span>
+              {% else %}
+                <span class="pc-price-original">₹{{ v.price|floatformat:0 }}</span>
+              {% endif %}
+            {% endwith %}
+          {% endwith %}
+        {% elif v.discount_price and v.discount_price < v.price %}
+          <span class="pc-price-final">₹{{ v.discount_price|floatformat:0 }}</span>
+          <span class="pc-price-original">₹{{ v.price|floatformat:0 }}</span>
+        {% elif v %}
+          <span class="pc-price-final">₹{{ v.price|floatformat:0 }}</span>
+        {% endif %}
+      </div>
+
+      {# Stock #}
+      <div class="pc-stock">
+        {% if p.total_stock > 10 %}
+          <span class="pc-in-stock"><i class="fas fa-check-circle me-1"></i>In Stock</span>
+        {% elif p.total_stock > 0 %}
+          <span class="pc-low-stock"><i class="fas fa-exclamation-circle me-1"></i>Only {{ p.total_stock }} left</span>
+        {% else %}
+          <span class="pc-out-stock"><i class="fas fa-times-circle me-1"></i>Out of Stock</span>
+        {% endif %}
+      </div>
+
+      {# Add to Cart #}
+      <div class="pc-action">
+        {% if v and p.total_stock > 0 %}
+          <button class="pc-btn-cart add-to-cart-btn"
+            data-variant-id="{{ v.id }}"
+            data-product-id="{{ p.id }}">
+            <i class="fas fa-shopping-cart me-1"></i> Add to Cart
+          </button>
+        {% elif p.total_stock == 0 %}
+          <button class="pc-btn-cart pc-btn-disabled" disabled>
+            <i class="fas fa-times me-1"></i> Out of Stock
+          </button>
+        {% else %}
+          <a href="{% url 'product_detail' p.id %}" class="pc-btn-cart">
+            <i class="fas fa-eye me-1"></i> View Product
+          </a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endwith %}
+  {% endwith %}
+
+{% else %}
+  {# variant-based card #}
+  {% with p=variant.product v=variant %}
+  {% with best_offer=p|get_best_offer %}
+  <div class="pc-card position-relative">
+
+    {# --- Badges --- #}
+    <div class="pc-badges">
+      <span class="pc-badge-size">{{ v.volume_ml }}ml</span>
+      {% if best_offer %}
+        {% if best_offer.discount_percentage > 0 %}
+          <span class="pc-badge-offer">{{ best_offer.discount_percentage|floatformat:0 }}% OFF</span>
+        {% elif best_offer.discount_fixed > 0 %}
+          <span class="pc-badge-offer">₹{{ best_offer.discount_fixed|floatformat:0 }} OFF</span>
+        {% endif %}
+      {% endif %}
+    </div>
+
+    {# --- Wishlist --- #}
+    {% if v.id in wishlist_variant_ids %}
+        {% include 'includes/wishlist_button.html' with variant=v is_in_wishlist=True %}
+    {% else %}
+        {% include 'includes/wishlist_button.html' with variant=v is_in_wishlist=False %}
+    {% endif %}
+
+    {# --- Image --- #}
+    <a href="{% url 'product_detail' p.id %}" class="pc-img-link">
+      {% if v.variant_image %}
+        <img src="{{ v.variant_image.url }}" class="pc-img" alt="{{ p.name }}">
+      {% elif p.main_image %}
+        <img src="{{ p.main_image.url }}" class="pc-img" alt="{{ p.name }}">
+      {% else %}
+        <div class="pc-img-placeholder"><i class="fas fa-spray-can fa-2x text-muted"></i></div>
+      {% endif %}
+    </a>
+
+    {# --- Body --- #}
+    <div class="pc-body">
+      <a href="{% url 'product_detail' p.id %}" class="pc-name">{{ p.name }}</a>
+      <p class="pc-type">{{ p.fragrance_type|default:"Eau de Parfum" }}</p>
+
+      {# Ratings #}
+      <div class="pc-rating">
+        <div class="pc-stars">
+          {% if p.avg_rating %}
+            {% for i in "12345" %}
+              {% if forloop.counter <= p.avg_rating %}<i class="fas fa-star"></i>
+              {% elif forloop.counter|add:"-0.5" <= p.avg_rating %}<i class="fas fa-star-half-alt"></i>
+              {% else %}<i class="far fa-star"></i>{% endif %}
+            {% endfor %}
+          {% else %}
+            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i>
+          {% endif %}
+        </div>
+        <span class="pc-rating-count">({{ p.rating_count|default:"0" }})</span>
+      </div>
+
+      {# Price #}
+      <div class="pc-price">
+        {% if best_offer %}
+          {% with discount=v.price|get_offer_discount:p %}
+            {% with final=v.price|subtract:discount %}
+              <span class="pc-price-final">₹{{ final|floatformat:0 }}</span>
+              {% if v.discount_price and v.discount_price < v.price %}
+                <span class="pc-price-original">₹{{ v.discount_price|floatformat:0 }}</span>
+                <span class="pc-price-mrp text-muted" style="font-size:0.75rem; text-decoration:line-through;">MRP ₹{{ v.price|floatformat:0 }}</span>
+              {% else %}
+                <span class="pc-price-original">₹{{ v.price|floatformat:0 }}</span>
+              {% endif %}
+            {% endwith %}
+          {% endwith %}
+        {% elif v.discount_price and v.discount_price < v.price %}
+          <span class="pc-price-final">₹{{ v.discount_price|floatformat:0 }}</span>
+          <span class="pc-price-original">₹{{ v.price|floatformat:0 }}</span>
+        {% else %}
+          <span class="pc-price-final">₹{{ v.price|floatformat:0 }}</span>
+        {% endif %}
+      </div>
+
+      {# Stock #}
+      <div class="pc-stock">
+        {% if v.stock > 10 %}
+          <span class="pc-in-stock"><i class="fas fa-check-circle me-1"></i>In Stock</span>
+        {% elif v.stock > 0 %}
+          <span class="pc-low-stock"><i class="fas fa-exclamation-circle me-1"></i>Only {{ v.stock }} left</span>
+        {% else %}
+          <span class="pc-out-stock"><i class="fas fa-times-circle me-1"></i>Out of Stock</span>
+        {% endif %}
+      </div>
+
+      {# Add to Cart #}
+      <div class="pc-action">
+        {% if v.stock > 0 %}
+          <button class="pc-btn-cart add-to-cart-btn"
+            data-variant-id="{{ v.id }}"
+            data-product-id="{{ p.id }}">
+            <i class="fas fa-shopping-cart me-1"></i> Add to Cart
+          </button>
+        {% else %}
+          <button class="pc-btn-cart pc-btn-disabled" disabled>
+            <i class="fas fa-times me-1"></i> Out of Stock
+          </button>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endwith %}
+  {% endwith %}
+{% endif %}

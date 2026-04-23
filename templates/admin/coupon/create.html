@@ -1,0 +1,236 @@
+{% extends 'common_admin.html' %}
+{% load static %}
+
+{% load coupon_filters %}
+
+{% block content %}
+<div class="content-area">
+    <div class="top-nav mb-4">
+        <div class="nav-left">
+            <h2 class="page-title">Create New Coupon</h2>
+        </div>
+        <div class="nav-right">
+            <a href="{% url 'admin_coupon_list' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Back to List
+            </a>
+        </div>
+    </div>
+
+    <div class="admin-card">
+        <div class="card-body">
+            <form method="post" id="couponForm">
+                {% csrf_token %}
+                
+                {% if messages %}
+                <div class="mb-4">
+                    {% for message in messages %}
+                    <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Coupon Code *</label>
+                        <input type="text" name="code" class="form-control" required 
+                               placeholder="e.g., SAVE20, SUMMER50" maxlength="50">
+                        <div class="form-text">Enter uppercase code without spaces</div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Discount Type *</label>
+                        <select name="discount_type" class="form-select" required>
+                            <option value="">Select Type</option>
+                            <option value="percentage">Percentage (%)</option>
+                            <option value="fixed">Fixed Amount (₹)</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Discount Value *</label>
+                        <input type="number" name="discount_value" class="form-control" required 
+                               step="0.01" min="0.01">
+                        <div class="form-text discount-help"></div>
+                        <div class="invalid-feedback" id="discount_value_error"></div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Minimum Order Amount</label>
+                        <input type="number" name="min_order_amount" class="form-control" 
+                               step="0.01" min="0" value="0">
+                        <div class="form-text">Set 0 for no minimum</div>
+                        <div class="invalid-feedback" id="min_order_error"></div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Maximum Discount Amount</label>
+                        <input type="number" name="max_discount_amount" class="form-control" 
+                               step="0.01" min="0">
+                        <div class="form-text">For percentage discounts only</div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Usage Limit *</label>
+                        <input type="number" name="usage_limit" class="form-control" required 
+                               min="1" value="1">
+                        <div class="form-text">Total times coupon can be used</div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Valid From *</label>
+                        <input type="datetime-local" name="valid_from" class="form-control" required>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Valid To *</label>
+                        <input type="datetime-local" name="valid_to" class="form-control" required>
+                    </div>
+                </div>
+                
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="form-check mb-2">
+                            <input type="checkbox" name="active" class="form-check-input" id="active" checked>
+                            <label class="form-check-label" for="active">Active Coupon</label>
+                        </div>
+                        
+                        <div class="form-check">
+                            <input type="checkbox" name="single_use_per_user" class="form-check-input" id="single_use" checked>
+                            <label class="form-check-label" for="single_use">Single Use Per User</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Create Coupon
+                    </button>
+                    <a href="{% url 'admin_coupon_list' %}" class="btn btn-outline-secondary">
+                        Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const discountType = document.querySelector('select[name="discount_type"]');
+    const discountValue = document.querySelector('input[name="discount_value"]');
+    const maxDiscount = document.querySelector('input[name="max_discount_amount"]');
+    const minOrderAmount = document.querySelector('input[name="min_order_amount"]');
+    const discountHelp = document.querySelector('.discount-help');
+    const discountValueError = document.getElementById('discount_value_error');
+    const minOrderError = document.getElementById('min_order_error');
+
+    function showError(input, errorEl, msg) {
+        input.classList.add('is-invalid');
+        errorEl.textContent = msg;
+        errorEl.style.display = 'block';
+    }
+
+    function clearError(input, errorEl) {
+        input.classList.remove('is-invalid');
+        errorEl.textContent = '';
+        errorEl.style.display = 'none';
+    }
+
+    function updateDiscountHelp() {
+        if (discountType.value === 'percentage') {
+            discountHelp.textContent = 'Enter percentage (e.g., 20 for 20%)';
+            maxDiscount.disabled = false;
+            discountValue.max = 100;
+        } else {
+            discountHelp.textContent = 'Enter fixed amount in ₹';
+            maxDiscount.disabled = true;
+            maxDiscount.value = '';
+            discountValue.removeAttribute('max');
+        }
+        // Clear errors when type changes
+        clearError(discountValue, discountValueError);
+        clearError(minOrderAmount, minOrderError);
+    }
+
+    discountType.addEventListener('change', updateDiscountHelp);
+    updateDiscountHelp();
+
+    // Live validation: clear errors as user types
+    discountValue.addEventListener('input', function() {
+        clearError(discountValue, discountValueError);
+        if (discountType.value === 'fixed') validateFixed();
+    });
+    minOrderAmount.addEventListener('input', function() {
+        clearError(minOrderAmount, minOrderError);
+        if (discountType.value === 'fixed') validateFixed();
+    });
+
+    function validateFixed() {
+        const dv = parseFloat(discountValue.value) || 0;
+        const mo = parseFloat(minOrderAmount.value) || 0;
+        let valid = true;
+
+        if (mo === 0) {
+            showError(minOrderAmount, minOrderError, 'A minimum order amount is required for fixed amount coupons.');
+            valid = false;
+        } else {
+            clearError(minOrderAmount, minOrderError);
+        }
+
+        if (dv > 0 && mo > 0 && dv >= mo) {
+            showError(discountValue, discountValueError, `Discount (₹${dv}) must be less than the minimum order amount (₹${mo}).`);
+            valid = false;
+        } else if (dv > 0) {
+            clearError(discountValue, discountValueError);
+        }
+
+        return valid;
+    }
+
+    // Form validation on submit
+    document.getElementById('couponForm').addEventListener('submit', function(e) {
+        let hasError = false;
+
+        const validFrom = new Date(document.querySelector('input[name="valid_from"]').value);
+        const validTo = new Date(document.querySelector('input[name="valid_to"]').value);
+
+        if (validFrom >= validTo) {
+            e.preventDefault();
+            alert('Valid "From" date must be before "To" date');
+            hasError = true;
+        }
+
+        if (discountType.value === 'percentage' && parseFloat(discountValue.value) > 100) {
+            e.preventDefault();
+            showError(discountValue, discountValueError, 'Percentage discount cannot exceed 100%.');
+            discountValue.focus();
+            hasError = true;
+        }
+
+        if (discountType.value === 'fixed') {
+            if (!validateFixed()) {
+                e.preventDefault();
+                // Focus the first errored field
+                if (minOrderAmount.classList.contains('is-invalid')) {
+                    minOrderAmount.focus();
+                } else {
+                    discountValue.focus();
+                }
+                hasError = true;
+            }
+        }
+
+        return !hasError;
+    });
+});
+</script>
+{% endblock %}

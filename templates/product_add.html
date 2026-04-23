@@ -1,0 +1,618 @@
+{% extends "common_admin.html" %}
+{% load static %}
+
+{% block page_title %}Add New Product{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs/dist/cropper.min.css">
+<style>
+    .image-crop-container {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.88);
+        z-index: 9999;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .crop-modal {
+        background: white;
+        border-radius: 12px;
+        padding: 24px;
+        max-width: 92%;
+        max-height: 92vh;
+        width: 820px;
+        overflow-y: auto;
+        z-index: 10000;
+    }
+
+    .crop-preview {
+        width: 100px;
+        height: 100px;
+        overflow: hidden;
+        border: 2px solid #007bff;
+        border-radius: 5px;
+        margin: 8px auto;
+    }
+
+    #cropImage {
+        max-width: 100%;
+        max-height: 420px;
+        display: block;
+    }
+
+    .variant-form {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        background: #fff;
+        margin-bottom: 16px;
+        padding: 16px;
+        border-left: 4px solid var(--primary-color, #431405) !important;
+    }
+
+    .img-preview-box {
+        border: 2px dashed #dee2e6;
+        border-radius: 8px;
+        background: #f8f9fa;
+        padding: 12px;
+        min-height: 110px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .img-preview-box .placeholder-text {
+        color: #adb5bd;
+        text-align: center;
+    }
+
+    .sku-preview {
+        font-family: monospace;
+        background: #e9ecef;
+        padding: 6px 10px;
+        border-radius: 4px;
+        font-size: 0.85rem;
+        color: #495057;
+    }
+</style>
+
+<div class="container-fluid">
+    <div class="admin-card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h3 class="mb-0"><i class="fas fa-plus me-2"></i>Add New Product</h3>
+            <a href="{% url 'product_list' %}" class="btn btn-outline-secondary btn-sm">
+                <i class="fas fa-arrow-left me-1"></i>Back
+            </a>
+        </div>
+
+        <div class="card-body">
+            {% if messages %}
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                {{ message }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endfor %}
+            {% endif %}
+
+            <form method="post" enctype="multipart/form-data" id="productForm">
+                {% csrf_token %}
+                <div class="row">
+
+                    <!-- ── Left Column ── -->
+                    <div class="col-lg-8">
+
+                        <!-- Basic Information -->
+                        <div class="admin-card mb-4">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0 text-dark"><i class="fas fa-info-circle me-2"></i>Basic Information</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <label for="{{ form.name.id_for_label }}" class="form-label fw-semibold">
+                                            Product Name <span class="text-danger">*</span>
+                                        </label>
+                                        {{ form.name }}
+                                        {% if form.name.errors %}<div class="text-danger small mt-1">{{ form.name.errors
+                                            }}</div>{% endif %}
+                                    </div>
+                                    <div class="col-12">
+                                        <label for="{{ form.slug.id_for_label }}"
+                                            class="form-label fw-semibold">Slug</label>
+                                        {{ form.slug }}
+
+                                        {% if form.slug.errors %}<div class="text-danger small mt-1">{{ form.slug.errors
+                                            }}</div>{% endif %}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="{{ form.brand.id_for_label }}"
+                                            class="form-label fw-semibold">Brand</label>
+                                        {{ form.brand }}
+                                        {% if form.brand.errors %}<div class="text-danger small mt-1">{{
+                                            form.brand.errors }}</div>{% endif %}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="{{ form.category.id_for_label }}" class="form-label fw-semibold">
+                                            Category <span class="text-danger">*</span>
+                                        </label>
+                                        {{ form.category }}
+                                        {% if form.category.errors %}<div class="text-danger small mt-1">{{
+                                            form.category.errors }}</div>{% endif %}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="{{ form.fragrance_type.id_for_label }}"
+                                            class="form-label fw-semibold">Fragrance Type</label>
+                                        {{ form.fragrance_type }}
+                                        {% if form.fragrance_type.errors %}<div class="text-danger small mt-1">{{
+                                            form.fragrance_type.errors }}</div>{% endif %}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="{{ form.occasion.id_for_label }}"
+                                            class="form-label fw-semibold">Occasion</label>
+                                        {{ form.occasion }}
+                                        {% if form.occasion.errors %}<div class="text-danger small mt-1">{{
+                                            form.occasion.errors }}</div>{% endif %}
+                                    </div>
+                                    <div class="col-12">
+                                        <label for="{{ form.description.id_for_label }}" class="form-label fw-semibold">
+                                            Description <span class="text-danger">*</span>
+                                        </label>
+                                        {{ form.description }}
+                                        {% if form.description.errors %}<div class="text-danger small mt-1">{{
+                                            form.description.errors }}</div>{% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Product Images -->
+                        <div class="admin-card mb-4">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0 text-dark"><i class="fas fa-images me-2"></i>Product Images</h5>
+                            </div>
+                            <div class="card-body">
+
+                                <!-- Main Image -->
+                                <div class="mb-4">
+                                    <label for="{{ form.main_image.id_for_label }}" class="form-label fw-semibold">
+                                        Main Image <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.main_image }}
+                                    <div class="form-text">Recommended 800×800px · JPG, PNG, WebP · max 5 MB</div>
+                                    {% if form.main_image.errors %}<div class="text-danger small mt-1">{{
+                                        form.main_image.errors }}</div>{% endif %}
+
+                                    <!-- Main image preview + crop -->
+                                    <div id="mainImagePreview" class="img-preview-box mt-3" style="display:none;">
+                                        <div class="d-flex align-items-center gap-3 w-100">
+                                            <img id="mainImagePreviewImg" class="img-thumbnail"
+                                                style="height:120px;width:120px;object-fit:cover;flex-shrink:0;">
+                                            <div>
+                                                <button type="button" class="btn btn-outline-primary btn-sm"
+                                                    onclick="openCropModal('main')">
+                                                    <i class="fas fa-crop-alt me-1"></i>Crop & Resize
+                                                </button>
+                                                <p class="text-muted small mb-0 mt-1">Crop before uploading</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Additional Images -->
+                                <div class="mb-3">
+                                    <label for="images" class="form-label fw-semibold">Additional Images</label>
+                                    <input type="file" name="images" id="images" multiple class="form-control"
+                                        accept="image/*">
+                                    <div class="form-text">Select multiple images from different angles</div>
+                                </div>
+
+                                <!-- Additional images preview + per-image crop -->
+                                <div id="additionalPreview" class="img-preview-box">
+                                    <div class="placeholder-text">
+                                        <i class="fas fa-images fa-2x d-block mb-1"></i>
+                                        Selected images will appear here
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Product Variants -->
+                        <div class="admin-card mb-4">
+                            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0 text-dark"><i class="fas fa-cubes me-2"></i>Product Variants</h5>
+
+                            </div>
+                            <div class="card-body">
+                                {{ product_formset.management_form }}
+                                <div id="variant-forms">
+                                    {% for vform in product_formset %}
+                                    <div class="variant-form">
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <h6 class="mb-0 fw-semibold text-primary">
+                                                <i class="fas fa-cube me-1"></i>Variant {{ forloop.counter }}
+                                            </h6>
+                                            {% if not forloop.first %}
+                                            <button type="button" class="btn btn-sm btn-outline-danger remove-variant">
+                                                <i class="fas fa-times me-1"></i>Remove
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                        <div class="row g-3">
+                                            <div class="col-md-4">
+                                                <label class="form-label fw-semibold">Volume (ml) <span
+                                                        class="text-danger">*</span></label>
+                                                {{ vform.volume_ml }}
+                                                {% if vform.volume_ml.errors %}<div class="text-danger small mt-1">{{
+                                                    vform.volume_ml.errors }}</div>{% endif %}
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label fw-semibold">Gender <span
+                                                        class="text-danger">*</span></label>
+                                                {{ vform.gender }}
+                                                {% if vform.gender.errors %}<div class="text-danger small mt-1">{{
+                                                    vform.gender.errors }}</div>{% endif %}
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label fw-semibold">SKU</label>
+                                                {{ vform.sku }}
+                                                <div class="form-text"></div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label fw-semibold">Price (₹) <span
+                                                        class="text-danger">*</span></label>
+                                                {{ vform.price }}
+                                                {% if vform.price.errors %}<div class="text-danger small mt-1">{{
+                                                    vform.price.errors }}</div>{% endif %}
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label fw-semibold">Discount Price (₹) <span
+                                                        class="text-muted fw-normal small"></span></label>
+                                                {{ vform.discount_price }}
+                                                <div class="form-text"></div>
+                                                {% if vform.discount_price.errors %}<div class="text-danger small mt-1">
+                                                    {{ vform.discount_price.errors }}</div>{% endif %}
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label fw-semibold">Stock <span
+                                                        class="text-danger">*</span></label>
+                                                {{ vform.stock }}
+                                                {% if vform.stock.errors %}<div class="text-danger small mt-1">{{
+                                                    vform.stock.errors }}</div>{% endif %}
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label fw-semibold d-block">Status</label>
+                                                <div class="form-check form-switch mt-2">
+                                                    {{ vform.is_active }}
+                                                    <label class="form-check-label"
+                                                        for="{{ vform.is_active.id_for_label }}">Active</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {{ vform.id }}
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                <div class="text-center mt-3">
+                                    <button type="button" class="btn btn-outline-primary" id="add-variant">
+                                        <i class="fas fa-plus me-2"></i>Add Another Variant
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div><!-- /col-lg-8 -->
+
+                    <!-- ── Right Column ── -->
+                    <div class="col-lg-4">
+                        <div class="admin-card mb-4">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0 text-dark"><i class="fas fa-toggle-on me-2"></i>Product Status</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-check form-switch mb-3">
+                                    {{ form.is_active }}
+                                    <label class="form-check-label fw-semibold"
+                                        for="{{ form.is_active.id_for_label }}">Active</label>
+                                    <div class="form-text">Visible to customers</div>
+                                </div>
+                                <div class="form-check form-switch mb-3">
+                                    {{ form.is_featured }}
+                                    <label class="form-check-label fw-semibold"
+                                        for="{{ form.is_featured.id_for_label }}">Featured</label>
+                                    <div class="form-text">Show on homepage</div>
+                                </div>
+                                <div class="form-check form-switch mb-3">
+                                    {{ form.is_best_selling }}
+                                    <label class="form-check-label fw-semibold"
+                                        for="{{ form.is_best_selling.id_for_label }}">Best Selling</label>
+                                </div>
+                                <div class="form-check form-switch mb-3">
+                                    {{ form.is_new_arrival }}
+                                    <label class="form-check-label fw-semibold"
+                                        for="{{ form.is_new_arrival.id_for_label }}">New Arrival</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="admin-card">
+                            <div class="card-body">
+                                <div class="d-grid gap-2">
+                                    <button type="submit" class="btn btn-primary btn-lg">
+                                        <i class="fas fa-plus me-2"></i>Create Product
+                                    </button>
+                                    <a href="{% url 'product_list' %}" class="btn btn-outline-secondary">
+                                        <i class="fas fa-arrow-left me-2"></i>Cancel
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div><!-- /row -->
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ── Crop Modal ── -->
+<div class="image-crop-container" id="cropModal">
+    <div class="crop-modal">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-0">Crop & Resize Image</h5>
+            <button type="button" class="btn-close" onclick="closeCropModal()"></button>
+        </div>
+        <div class="alert alert-info py-2 small mb-3">
+            <i class="fas fa-info-circle me-1"></i>Drag to select the area you want to keep.
+        </div>
+        <div class="row g-3">
+            <div class="col-md-8">
+                <img id="cropImage" src="" alt="Crop preview">
+            </div>
+            <div class="col-md-4">
+                <h6>Live Preview</h6>
+                <div class="crop-preview"></div>
+                <div class="mt-3">
+                    <label class="form-label small fw-semibold">Aspect Ratio</label>
+                    <select class="form-select form-select-sm" id="aspectRatio">
+                        <option value="1">Square (1:1)</option>
+                        <option value="4/3">Landscape (4:3)</option>
+                        <option value="3/4">Portrait (3:4)</option>
+                        <option value="NaN">Free</option>
+                    </select>
+                </div>
+                <div class="mt-3 d-grid gap-2">
+                    <button type="button" class="btn btn-success btn-sm" onclick="applyCrop()">
+                        <i class="fas fa-check me-1"></i>Apply Crop
+                    </button>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="closeCropModal()">
+                        <i class="fas fa-times me-1"></i>Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/cropperjs/dist/cropper.min.js"></script>
+<script>
+    let cropper = null;
+    let cropTarget = null;
+    let additionalFiles = [];
+
+    /* ── SKU generation ── */
+    function generateSKU(name, volume, gender) {
+        if (!name || !volume || !gender) return '';
+        const n = name.trim().toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8);
+        return `${n}-${volume}-${gender.slice(0, 3).toUpperCase()}`;
+    }
+    function updateVariantSKU(vf) {
+        const name = document.getElementById('id_name')?.value || '';
+        const volume = vf.querySelector('input[name*="volume_ml"]')?.value || '';
+        const gender = vf.querySelector('select[name*="gender"]')?.value || '';
+        const sku = vf.querySelector('input[name*="-sku"]');
+        if (sku) sku.value = generateSKU(name, volume, gender);
+    }
+    function updateAllSKUs() {
+        document.querySelectorAll('.variant-form').forEach(updateVariantSKU);
+    }
+
+    /* ── additional images preview ── */
+    function renderAdditionalPreviews() {
+        const box = document.getElementById('additionalPreview');
+        if (!box) return;
+        if (!additionalFiles.length) {
+            box.innerHTML = '<div class="placeholder-text"><i class="fas fa-images fa-2x d-block mb-1"></i>Selected images will appear here</div>';
+            return;
+        }
+        box.innerHTML = '';
+        additionalFiles.forEach((file, idx) => {
+            if (!file.type.startsWith('image/')) return;
+            const reader = new FileReader();
+            reader.onload = ev => {
+                const wrap = document.createElement('div');
+                wrap.className = 'text-center';
+                wrap.innerHTML = `
+                <img src="${ev.target.result}" class="img-thumbnail"
+                     style="height:90px;width:90px;object-fit:cover;">
+                <div class="small text-muted mt-1">Image ${idx + 1}</div>
+                <button type="button" class="btn btn-outline-primary btn-sm mt-1 crop-additional-btn"
+                        data-idx="${idx}" style="font-size:0.7rem;padding:2px 6px;">
+                    <i class="fas fa-crop-alt"></i> Crop
+                </button>`;
+                box.appendChild(wrap);
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    /* ── crop modal ── */
+    function openCropModal(target) {
+        cropTarget = target;
+        const cropImg = document.getElementById('cropImage');
+        if (target === 'main') {
+            const prev = document.getElementById('mainImagePreviewImg');
+            if (!prev || !prev.src || prev.src === window.location.href) {
+                alert('Please select a main image first.'); return;
+            }
+            cropImg.src = prev.src;
+        } else {
+            const file = additionalFiles[target];
+            if (!file) return;
+            cropImg.src = URL.createObjectURL(file);
+        }
+        document.getElementById('cropModal').style.display = 'flex';
+        setTimeout(() => {
+            if (cropper) cropper.destroy();
+            cropper = new Cropper(cropImg, {
+                aspectRatio: 1, viewMode: 1,
+                preview: '.crop-preview', autoCropArea: 0.85
+            });
+            document.getElementById('aspectRatio').onchange = function () {
+                cropper.setAspectRatio(this.value === 'NaN' ? NaN : eval(this.value));
+            };
+        }, 150);
+    }
+
+    function applyCrop() {
+        if (!cropper) return;
+        cropper.getCroppedCanvas({ width: 800, height: 800, fillColor: '#fff' })
+            .toBlob(blob => {
+                if (cropTarget === 'main') {
+                    const file = new File([blob], 'main_cropped.jpg', { type: 'image/jpeg' });
+                    const dt = new DataTransfer(); dt.items.add(file);
+                    document.querySelector('input[name="main_image"]').files = dt.files;
+                    document.getElementById('mainImagePreviewImg').src = URL.createObjectURL(file);
+                } else {
+                    const orig = additionalFiles[cropTarget];
+                    const file = new File([blob], orig?.name || `img_${cropTarget}.jpg`, { type: 'image/jpeg' });
+                    additionalFiles[cropTarget] = file;
+                    const dt = new DataTransfer();
+                    additionalFiles.forEach(f => dt.items.add(f));
+                    document.getElementById('images').files = dt.files;
+                    renderAdditionalPreviews();
+                }
+                closeCropModal();
+            }, 'image/jpeg', 0.9);
+    }
+
+    function closeCropModal() {
+        document.getElementById('cropModal').style.display = 'none';
+        if (cropper) { cropper.destroy(); cropper = null; }
+    }
+
+    /* ── DOMContentLoaded: wire up all events ── */
+    document.addEventListener('DOMContentLoaded', function () {
+
+        /* product name → SKU */
+        document.getElementById('id_name')?.addEventListener('input', updateAllSKUs);
+
+        /* volume / gender → SKU */
+        document.addEventListener('input', e => {
+            if (e.target.matches('input[name*="volume_ml"]'))
+                updateVariantSKU(e.target.closest('.variant-form'));
+        });
+        document.addEventListener('change', e => {
+            if (e.target.matches('select[name*="gender"]'))
+                updateVariantSKU(e.target.closest('.variant-form'));
+        });
+
+        /* discount price validation */
+        document.addEventListener('input', e => {
+            if (!e.target.matches('input[name*="discount_price"]')) return;
+            const vf = e.target.closest('.variant-form');
+            const price = parseFloat(vf?.querySelector('input[name*="price"]')?.value) || 0;
+            const disc = parseFloat(e.target.value) || 0;
+            e.target.classList.toggle('is-invalid', disc > 0 && disc > price);
+        });
+
+        /* main image preview */
+        document.querySelector('input[name="main_image"]')?.addEventListener('change', function () {
+            if (!this.files[0]) return;
+            const reader = new FileReader();
+            reader.onload = ev => {
+                document.getElementById('mainImagePreviewImg').src = ev.target.result;
+                document.getElementById('mainImagePreview').style.display = 'flex';
+            };
+            reader.readAsDataURL(this.files[0]);
+        });
+
+        /* additional images preview */
+        document.getElementById('images')?.addEventListener('change', function () {
+            additionalFiles = Array.from(this.files);
+            renderAdditionalPreviews();
+        });
+
+        /* crop button on additional images */
+        document.getElementById('additionalPreview')?.addEventListener('click', e => {
+            const btn = e.target.closest('.crop-additional-btn');
+            if (btn) openCropModal(parseInt(btn.dataset.idx));
+        });
+
+        /* crop modal close on backdrop */
+        document.getElementById('cropModal')?.addEventListener('click', e => {
+            if (e.target === e.currentTarget) closeCropModal();
+        });
+
+        /* add variant */
+        const variantForms = document.getElementById('variant-forms');
+        const totalForms = document.getElementById('id_variants-TOTAL_FORMS');
+
+        document.getElementById('add-variant')?.addEventListener('click', () => {
+            const formNum = parseInt(totalForms.value);
+            const first = variantForms.querySelector('.variant-form');
+            if (!first) return;
+            const nf = first.cloneNode(true);
+            nf.innerHTML = nf.innerHTML.replace(/variants-\d+-/g, `variants-${formNum}-`);
+            nf.querySelectorAll('input, select, textarea').forEach(el => {
+                if (el.id) el.id = el.id.replace(/-\d+-/, `-${formNum}-`);
+                if (el.name && !el.name.includes('TOTAL_FORMS') && !el.name.includes('INITIAL_FORMS')) {
+                    if (el.type === 'checkbox') el.checked = el.name.includes('is_active');
+                    else if (el.type !== 'file') el.value = '';
+                }
+            });
+            nf.querySelectorAll('label').forEach(l => {
+                const f = l.getAttribute('for');
+                if (f) l.setAttribute('for', f.replace(/-\d+-/, `-${formNum}-`));
+            });
+            const h6 = nf.querySelector('h6');
+            if (h6) h6.innerHTML = `<i class="fas fa-cube me-1"></i>Variant ${formNum + 1}`;
+            if (!nf.querySelector('.remove-variant')) {
+                const hdr = nf.querySelector('.d-flex');
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'btn btn-sm btn-outline-danger remove-variant';
+                btn.innerHTML = '<i class="fas fa-times me-1"></i>Remove';
+                hdr.appendChild(btn);
+            }
+            variantForms.appendChild(nf);
+            totalForms.value = formNum + 1;
+            updateVariantSKU(nf);
+            nf.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        });
+
+        /* remove variant */
+        variantForms?.addEventListener('click', e => {
+            if (!e.target.closest('.remove-variant')) return;
+            e.target.closest('.variant-form')?.remove();
+            totalForms.value = parseInt(totalForms.value) - 1;
+            variantForms.querySelectorAll('.variant-form').forEach((f, i) => {
+                const h6 = f.querySelector('h6');
+                if (h6) h6.innerHTML = `<i class="fas fa-cube me-1"></i>Variant ${i + 1}`;
+            });
+        });
+
+        /* init SKUs */
+        updateAllSKUs();
+    });
+
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeCropModal(); });
+</script>
+{% endblock %}

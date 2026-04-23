@@ -1,0 +1,512 @@
+<!-- user_edit_profile.html -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --primary: #431405;
+        --primary-dark: #2c0d03;
+        --accent: #c7a17a;
+        --border: #e9e2dc;
+        --bg-light: #faf7f4;
+        --valid: #2D7A2D;
+        --invalid: #D8000C;
+    }
+
+    .edit-hero {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+        padding: 40px 0 30px;
+        margin-bottom: 36px;
+    }
+    .edit-hero h1 {
+        font-family: 'Playfair Display', serif;
+        font-size: 2rem;
+        font-weight: 600;
+        color: #fff;
+        margin-bottom: 6px;
+    }
+    .edit-hero p { color: rgba(255,255,255,0.75); font-size: 0.9rem; }
+
+    .edit-card {
+        border: none;
+        border-radius: 16px;
+        box-shadow: 0 4px 24px rgba(67,20,5,0.1);
+        overflow: hidden;
+    }
+    .edit-card-header {
+        background: var(--bg-light);
+        border-bottom: 1px solid var(--border);
+        padding: 18px 26px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .edit-card-header h5 {
+        font-family: 'Playfair Display', serif;
+        color: var(--primary);
+        font-size: 1.05rem;
+        font-weight: 600;
+        margin: 0;
+    }
+    .edit-card-header .section-icon {
+        width: 32px; height: 32px;
+        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+        border-radius: 8px;
+        display: flex; align-items: center; justify-content: center;
+        color: #fff; font-size: 0.8rem;
+    }
+    .edit-card-body { padding: 26px 26px 20px; }
+
+    /* Field */
+    .field-wrap { margin-bottom: 20px; }
+    .field-wrap label {
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: var(--primary);
+        margin-bottom: 6px;
+        display: block;
+    }
+    .required-star { color: var(--invalid); margin-left: 2px; }
+
+    .form-control, .form-select {
+        border: 1.5px solid #ddd;
+        border-radius: 8px;
+        font-size: 0.88rem;
+        padding: 10px 13px;
+        transition: border-color 0.25s, box-shadow 0.25s;
+        background: #fff;
+    }
+    .form-control:focus, .form-select:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(67,20,5,0.08);
+        outline: none;
+    }
+    .form-control.is-valid   { border-color: var(--valid)   !important; box-shadow: 0 0 0 3px rgba(45,122,45,0.08)  !important; }
+    .form-control.is-invalid { border-color: var(--invalid) !important; box-shadow: 0 0 0 3px rgba(216,0,12,0.08)   !important; }
+    .form-select.is-invalid  { border-color: var(--invalid) !important; box-shadow: 0 0 0 3px rgba(216,0,12,0.08)   !important; }
+
+    .field-error {
+        font-size: 0.75rem;
+        color: var(--invalid);
+        margin-top: 4px;
+        display: none;
+        align-items: center;
+        gap: 4px;
+    }
+    .field-error.visible { display: flex; }
+    .field-error i { font-size: 0.7rem; }
+    .field-hint { font-size: 0.73rem; color: #999; margin-top: 3px; }
+
+    /* Avatar preview */
+    .avatar-preview-wrap {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        background: var(--bg-light);
+        border: 1.5px dashed var(--border);
+        border-radius: 12px;
+        padding: 16px 20px;
+        margin-bottom: 8px;
+    }
+    .avatar-preview {
+        width: 72px; height: 72px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid var(--accent);
+        flex-shrink: 0;
+    }
+    .avatar-upload-info { flex: 1; }
+    .avatar-upload-info p { font-size: 0.8rem; color: #888; margin: 0; line-height: 1.5; }
+
+    /* Section divider */
+    .section-divider {
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        color: #aaa;
+        margin: 24px 0 14px;
+        padding-bottom: 6px;
+        border-bottom: 1px solid var(--border);
+    }
+
+    /* Buttons */
+    .btn-save-profile {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        padding: 11px 30px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        transition: all 0.3s;
+        cursor: pointer;
+    }
+    .btn-save-profile:hover { opacity: 0.9; transform: translateY(-1px); color: #fff; }
+    .btn-cancel-profile {
+        background: #f0ebe8;
+        color: var(--primary);
+        border: none;
+        border-radius: 8px;
+        padding: 11px 28px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.3s;
+    }
+    .btn-cancel-profile:hover { background: #e0d8d4; color: var(--primary); }
+
+    /* Quick links */
+    .quick-links { display: flex; flex-direction: column; gap: 4px; }
+    .quick-link {
+        display: flex; align-items: center; gap: 10px;
+        padding: 10px 14px;
+        border-radius: 8px;
+        color: var(--primary);
+        text-decoration: none;
+        font-size: 0.85rem;
+        font-weight: 500;
+        transition: background 0.2s;
+        border: 1px solid transparent;
+    }
+    .quick-link i { width: 18px; color: var(--accent); font-size: 0.9rem; }
+    .quick-link:hover { background: var(--bg-light); border-color: var(--border); color: var(--primary); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="edit-hero">
+    <div class="container">
+        <h1>Edit Profile</h1>
+        <p>Update your personal information</p>
+    </div>
+</div>
+
+<div class="container pb-5">
+    <div class="row g-4">
+
+        <!-- Sidebar quick links -->
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-3 p-3">
+                <p class="text-muted mb-2" style="font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.6px;">Account</p>
+                <div class="quick-links">
+                    <a href="{% url 'user_profile' %}" class="quick-link">
+                        <i class="fas fa-user"></i> Profile Overview
+                    </a>
+                    <a href="{% url 'user_address_list' %}" class="quick-link">
+                        <i class="fas fa-map-marker-alt"></i> My Addresses
+                    </a>
+                    <a href="{% url 'change_email' %}" class="quick-link">
+                        <i class="fas fa-envelope"></i> Change Email
+                    </a>
+                    <a href="{% url 'change_password' %}" class="quick-link">
+                        <i class="fas fa-lock"></i> Change Password
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main form -->
+        <div class="col-md-9">
+            <div class="card edit-card">
+                <div class="edit-card-header">
+                    <div class="section-icon"><i class="fas fa-user-edit"></i></div>
+                    <h5>Personal Information</h5>
+                </div>
+                <div class="edit-card-body">
+
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger py-2 mb-3" style="font-size:0.85rem;border-radius:8px;">
+                            {% for error in form.non_field_errors %}
+                                <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+                    <form method="POST" enctype="multipart/form-data" id="profileForm" novalidate>
+                        {% csrf_token %}
+
+                        <!-- Name row -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="field-wrap">
+                                    <label for="{{ form.first_name.id_for_label }}">
+                                        First Name <span class="required-star">*</span>
+                                    </label>
+                                    <input type="text"
+                                           id="{{ form.first_name.id_for_label }}"
+                                           name="first_name"
+                                           class="form-control {% if form.first_name.errors %}is-invalid{% endif %}"
+                                           placeholder="First name"
+                                           value="{{ form.first_name.value|default:'' }}"
+                                           maxlength="150">
+                                    {% if form.first_name.errors %}
+                                        {% for e in form.first_name.errors %}
+                                            <div class="field-error visible"><i class="fas fa-exclamation-circle"></i>{{ e }}</div>
+                                        {% endfor %}
+                                    {% else %}
+                                        <div class="field-error" id="first_name-error"></div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="field-wrap">
+                                    <label for="{{ form.last_name.id_for_label }}">Last Name</label>
+                                    <input type="text"
+                                           id="{{ form.last_name.id_for_label }}"
+                                           name="last_name"
+                                           class="form-control {% if form.last_name.errors %}is-invalid{% endif %}"
+                                           placeholder="Last name"
+                                           value="{{ form.last_name.value|default:'' }}"
+                                           maxlength="150">
+                                    {% if form.last_name.errors %}
+                                        {% for e in form.last_name.errors %}
+                                            <div class="field-error visible"><i class="fas fa-exclamation-circle"></i>{{ e }}</div>
+                                        {% endfor %}
+                                    {% else %}
+                                        <div class="field-error" id="last_name-error"></div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Phone + Gender row -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="field-wrap">
+                                    <label for="{{ form.phone.id_for_label }}">Phone Number</label>
+                                    <input type="tel"
+                                           id="{{ form.phone.id_for_label }}"
+                                           name="phone"
+                                           class="form-control {% if form.phone.errors %}is-invalid{% endif %}"
+                                           placeholder="10-digit mobile number"
+                                           value="{{ form.phone.value|default:'' }}"
+                                           maxlength="10">
+                                    {% if form.phone.errors %}
+                                        {% for e in form.phone.errors %}
+                                            <div class="field-error visible"><i class="fas fa-exclamation-circle"></i>{{ e }}</div>
+                                        {% endfor %}
+                                    {% else %}
+                                        <div class="field-error" id="phone-error"></div>
+                                    {% endif %}
+                                    <div class="field-hint">Indian mobile number starting with 6–9 (optional)</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="field-wrap">
+                                    <label for="{{ form.gender.id_for_label }}">Gender</label>
+                                    {{ form.gender }}
+                                    {% if form.gender.errors %}
+                                        {% for e in form.gender.errors %}
+                                            <div class="field-error visible"><i class="fas fa-exclamation-circle"></i>{{ e }}</div>
+                                        {% endfor %}
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Address -->
+                        <div class="field-wrap">
+                            <label for="{{ form.address.id_for_label }}">Address</label>
+                            <textarea id="{{ form.address.id_for_label }}"
+                                      name="address"
+                                      class="form-control {% if form.address.errors %}is-invalid{% endif %}"
+                                      rows="3"
+                                      placeholder="Your address (optional)"
+                                      maxlength="500">{{ form.address.value|default:'' }}</textarea>
+                            {% if form.address.errors %}
+                                {% for e in form.address.errors %}
+                                    <div class="field-error visible"><i class="fas fa-exclamation-circle"></i>{{ e }}</div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="field-error" id="address-error"></div>
+                            {% endif %}
+                            <div class="field-hint" id="address-char-count" style="text-align:right;"></div>
+                        </div>
+
+                        <!-- Profile Image -->
+                        <div class="section-divider">Profile Photo</div>
+
+                        <div class="field-wrap">
+                            <label>Profile Image</label>
+                            <div class="avatar-preview-wrap">
+                                <img id="avatarPreview"
+                                     src="{% if user.profile_image and user.profile_image.name %}{{ user.profile_image.url }}{% else %}{% static 'css/images/default_avatar.png' %}{% endif %}"
+                                     alt="Profile preview"
+                                     class="avatar-preview">
+                                <div class="avatar-upload-info">
+                                    <p>JPEG, PNG or WebP &nbsp;·&nbsp; Max 2 MB</p>
+                                    <p class="mt-1">Click below to choose a new photo</p>
+                                </div>
+                            </div>
+                            <input type="file"
+                                   id="{{ form.profile_image.id_for_label }}"
+                                   name="profile_image"
+                                   class="form-control {% if form.profile_image.errors %}is-invalid{% endif %}"
+                                   accept="image/jpeg,image/png,image/webp">
+                            {% if form.profile_image.errors %}
+                                {% for e in form.profile_image.errors %}
+                                    <div class="field-error visible"><i class="fas fa-exclamation-circle"></i>{{ e }}</div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="field-error" id="image-error"></div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="d-flex gap-3 justify-content-end mt-3 pt-3" style="border-top:1px solid var(--border);">
+                            <a href="{% url 'user_profile' %}" class="btn-cancel-profile">Cancel</a>
+                            <button type="submit" class="btn-save-profile" id="saveBtn">
+                                <i class="fas fa-check me-1"></i> Save Changes
+                            </button>
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ── Helpers ──────────────────────────────────────────────────────────────────
+function showError(el, errEl, msg) {
+    el.classList.remove('is-valid');
+    el.classList.add('is-invalid');
+    if (errEl) {
+        errEl.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + msg;
+        errEl.classList.add('visible');
+    }
+}
+function showValid(el, errEl) {
+    el.classList.remove('is-invalid');
+    el.classList.add('is-valid');
+    if (errEl) { errEl.classList.remove('visible'); errEl.innerHTML = ''; }
+}
+function clearState(el, errEl) {
+    el.classList.remove('is-valid', 'is-invalid');
+    if (errEl) { errEl.classList.remove('visible'); errEl.innerHTML = ''; }
+}
+
+// ── Field refs ───────────────────────────────────────────────────────────────
+const F = {
+    first_name: { el: document.getElementById('id_first_name'), err: document.getElementById('first_name-error') },
+    last_name:  { el: document.getElementById('id_last_name'),  err: document.getElementById('last_name-error') },
+    phone:      { el: document.getElementById('id_phone'),      err: document.getElementById('phone-error') },
+    address:    { el: document.getElementById('id_address'),    err: document.getElementById('address-error') },
+};
+
+// ── Validators ───────────────────────────────────────────────────────────────
+const V = {
+    first_name(v) {
+        if (!v) return 'First name is required.';
+        if (v.length < 2) return 'Must be at least 2 characters.';
+        if (!/^[a-zA-Z\s\-']+$/.test(v)) return "Only letters, spaces, hyphens, and apostrophes allowed.";
+        return null;
+    },
+    last_name(v) {
+        if (!v) return null; // optional
+        if (!/^[a-zA-Z\s\-']+$/.test(v)) return "Only letters, spaces, hyphens, and apostrophes allowed.";
+        return null;
+    },
+    phone(v) {
+        if (!v) return null; // optional
+        if (!/^\d+$/.test(v)) return 'Digits only.';
+        if (v.length !== 10) return 'Must be exactly 10 digits.';
+        if (!/^[6-9]/.test(v)) return 'Must start with 6, 7, 8, or 9.';
+        return null;
+    },
+    address(v) {
+        if (v && v.length > 500) return 'Address cannot exceed 500 characters.';
+        return null;
+    },
+};
+
+// ── Attach live validation ───────────────────────────────────────────────────
+Object.keys(F).forEach(key => {
+    const { el, err } = F[key];
+    if (!el) return;
+
+    if (key === 'phone') {
+        el.addEventListener('keypress', e => { if (!/\d/.test(e.key)) e.preventDefault(); });
+    }
+
+    el.addEventListener('input', () => {
+        const v = el.value.trim();
+        if (!v && key !== 'first_name') { clearState(el, err); return; }
+        const msg = V[key](v);
+        msg ? showError(el, err, msg) : showValid(el, err);
+
+        // Address char counter
+        if (key === 'address') {
+            const counter = document.getElementById('address-char-count');
+            const len = el.value.length;
+            counter.textContent = len + ' / 500';
+            counter.style.color = len > 480 ? '#D8000C' : '#aaa';
+        }
+    });
+
+    el.addEventListener('blur', () => {
+        const v = el.value.trim();
+        const msg = V[key](v);
+        if (msg) showError(el, err, msg);
+        else if (v || key === 'first_name') showValid(el, err);
+    });
+});
+
+// ── Image preview + validation ───────────────────────────────────────────────
+const imageInput = document.getElementById('id_profile_image');
+const imageError = document.getElementById('image-error');
+const preview    = document.getElementById('avatarPreview');
+
+if (imageInput) {
+    imageInput.addEventListener('change', function() {
+        const file = this.files[0];
+        if (!file) return;
+
+        const allowed = ['image/jpeg', 'image/png', 'image/webp'];
+        if (!allowed.includes(file.type)) {
+            showError(this, imageError, 'Only JPEG, PNG, and WebP images are allowed.');
+            this.value = '';
+            return;
+        }
+        if (file.size > 2 * 1024 * 1024) {
+            showError(this, imageError, 'Image size must not exceed 2 MB.');
+            this.value = '';
+            return;
+        }
+        showValid(this, imageError);
+
+        // Live preview
+        const reader = new FileReader();
+        reader.onload = e => { preview.src = e.target.result; };
+        reader.readAsDataURL(file);
+    });
+}
+
+// ── Submit guard ─────────────────────────────────────────────────────────────
+document.getElementById('profileForm').addEventListener('submit', function(e) {
+    let ok = true;
+    Object.keys(F).forEach(key => {
+        const { el, err } = F[key];
+        if (!el) return;
+        const msg = V[key](el.value.trim());
+        if (msg) { showError(el, err, msg); ok = false; }
+        else if (el.value.trim() || key === 'first_name') showValid(el, err);
+    });
+
+    if (!ok) {
+        e.preventDefault();
+        document.querySelector('.is-invalid')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+    }
+
+    const btn = document.getElementById('saveBtn');
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Saving...';
+    btn.disabled = true;
+});
+</script>
+{% endblock %}

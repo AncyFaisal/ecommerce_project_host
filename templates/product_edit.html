@@ -1,0 +1,578 @@
+{% extends "common_admin.html" %}
+{% load static %}
+
+{% block page_title %}Edit Product - {{ product.name }}{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs/dist/cropper.min.css">
+<style>
+.image-crop-container {
+    display: none; position: fixed; top: 0; left: 0;
+    width: 100%; height: 100%; background: rgba(0,0,0,0.9);
+    z-index: 9999; justify-content: center; align-items: center;
+}
+.crop-modal {
+    background: white; border-radius: 10px; padding: 20px;
+    max-width: 90%; max-height: 90%; width: 800px; z-index: 10000;
+}
+.crop-preview {
+    width: 100px; height: 100px; overflow: hidden;
+    border: 2px solid #007bff; border-radius: 5px; margin: 10px auto;
+}
+#cropImage { max-width: 100%; max-height: 400px; }
+.variant-form {
+    border: 1px solid #dee2e6; border-radius: 8px; background: #fff;
+    margin-bottom: 16px; border-left: 4px solid var(--primary-color, #431405) !important;
+    transition: box-shadow 0.2s;
+}
+.variant-form:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+#variant-forms { max-height: 900px; overflow-y: auto; }
+</style>
+
+<div class="container-fluid">
+    <div class="admin-card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h3 class="mb-0">
+                <i class="fas fa-edit me-2"></i>Edit: {{ product.name }}
+            </h3>
+            <div class="d-flex gap-2 align-items-center">
+                <span class="badge bg-primary">#{{ product.id }}</span>
+                <span class="badge {% if product.is_active %}bg-success{% else %}bg-secondary{% endif %}">
+                    {% if product.is_active %}Active{% else %}Inactive{% endif %}
+                </span>
+                <a href="{% url 'product_list' %}" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-arrow-left me-1"></i>Back
+                </a>
+            </div>
+        </div>
+
+        <div class="card-body">
+            {% if messages %}
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                    {{ message }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                {% endfor %}
+            {% endif %}
+
+            <form method="post" enctype="multipart/form-data" id="productForm" novalidate>
+                {% csrf_token %}
+
+                <div class="row">
+                    <!-- Left Column -->
+                    <div class="col-lg-8">
+
+                        <!-- Basic Information -->
+                        <div class="admin-card mb-4">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0 text-dark"><i class="fas fa-info-circle me-2"></i>Basic Information</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <label for="{{ form.name.id_for_label }}" class="form-label fw-semibold">
+                                            Product Name <span class="text-danger">*</span>
+                                        </label>
+                                        {{ form.name }}
+                                        {% if form.name.errors %}<div class="text-danger small mt-1">{{ form.name.errors }}</div>{% endif %}
+                                    </div>
+                                    <div class="col-12">
+                                        <label for="{{ form.slug.id_for_label }}" class="form-label fw-semibold">Slug</label>
+                                        {{ form.slug }}
+                                        <div class="form-text"></div>
+                                        {% if form.slug.errors %}<div class="text-danger small mt-1">{{ form.slug.errors }}</div>{% endif %}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="{{ form.brand.id_for_label }}" class="form-label fw-semibold">Brand</label>
+                                        {{ form.brand }}
+                                        {% if form.brand.errors %}<div class="text-danger small mt-1">{{ form.brand.errors }}</div>{% endif %}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="{{ form.category.id_for_label }}" class="form-label fw-semibold">
+                                            Category <span class="text-danger">*</span>
+                                        </label>
+                                        {{ form.category }}
+                                        {% if form.category.errors %}<div class="text-danger small mt-1">{{ form.category.errors }}</div>{% endif %}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="{{ form.fragrance_type.id_for_label }}" class="form-label fw-semibold">Fragrance Type</label>
+                                        {{ form.fragrance_type }}
+                                        {% if form.fragrance_type.errors %}<div class="text-danger small mt-1">{{ form.fragrance_type.errors }}</div>{% endif %}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="{{ form.occasion.id_for_label }}" class="form-label fw-semibold">Occasion</label>
+                                        {{ form.occasion }}
+                                        {% if form.occasion.errors %}<div class="text-danger small mt-1">{{ form.occasion.errors }}</div>{% endif %}
+                                    </div>
+                                    <div class="col-12">
+                                        <label for="{{ form.description.id_for_label }}" class="form-label fw-semibold">
+                                            Description <span class="text-danger">*</span>
+                                        </label>
+                                        {{ form.description }}
+                                        {% if form.description.errors %}<div class="text-danger small mt-1">{{ form.description.errors }}</div>{% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Product Images -->
+                        <div class="admin-card mb-4">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0 text-dark"><i class="fas fa-images me-2"></i>Product Images</h5>
+                            </div>
+                            <div class="card-body">
+                                <!-- Main Image -->
+                                <div class="mb-4">
+                                    <label for="{{ form.main_image.id_for_label }}" class="form-label fw-semibold">
+                                        {% if product.main_image %}Update Main Image{% else %}Main Image{% endif %}
+                                    </label>
+                                    {% if product.main_image %}
+                                    <div class="mb-2 d-flex align-items-center gap-3">
+                                        <img src="{{ product.main_image.url }}" class="img-thumbnail" style="height:100px;width:100px;object-fit:cover;">
+                                        <small class="text-muted">Current main image — upload new to replace</small>
+                                    </div>
+                                    {% endif %}
+                                    {{ form.main_image }}
+                                    <div class="form-text">JPG, PNG, WebP (max 5MB)</div>
+                                    {% if form.main_image.errors %}<div class="text-danger small mt-1">{{ form.main_image.errors }}</div>{% endif %}
+
+                                    <div id="mainImagePreview" class="mt-3 p-3 border rounded bg-light" style="display:none;">
+                                        <div class="d-flex align-items-center gap-3">
+                                            <img id="mainImagePreviewImg" class="img-thumbnail" style="height:100px;width:100px;object-fit:cover;">
+                                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="openCropModal('main')">
+                                                <i class="fas fa-crop me-1"></i>Crop & Resize
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Additional Images -->
+                                <div class="mb-3">
+                                    <label for="images" class="form-label fw-semibold">Additional Images</label>
+                                    <input type="file" name="images" id="images" multiple class="form-control" accept="image/*">
+                                    <div class="form-text">Upload new images to add to gallery</div>
+                                </div>
+
+                                <!-- Current Gallery -->
+                                {% if product.images.all %}
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Current Gallery</label>
+                                    <div class="row g-2">
+                                        {% for img in product.images.all %}
+                                        <div class="col-auto text-center">
+                                            <img src="{{ img.image.url }}" class="img-thumbnail" style="height:80px;width:80px;object-fit:cover;">
+                                            {% if img.is_default %}<div><span class="badge bg-success badge-sm">Main</span></div>{% endif %}
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                {% endif %}
+
+                                <!-- New Images Preview -->
+                                <div id="newPreview" class="mt-2 border rounded p-3 text-center text-muted" style="display:none;">
+                                    <i class="fas fa-images fa-2x mb-2"></i>
+                                    <p class="mb-0">New images will appear here</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Product Variants -->
+                        <div class="admin-card mb-4">
+                            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0 text-dark"><i class="fas fa-cubes me-2"></i>Product Variants</h5>
+                                <span class="badge bg-primary">{{ product.variants.count }} variant(s)</span>
+                            </div>
+                            <div class="card-body">
+                                {{ product_formset.management_form }}
+                                <div id="variant-forms">
+                                    {% for vform in product_formset %}
+                                    <div class="variant-form p-3 {% if vform.instance.pk %}border-primary{% else %}border-success{% endif %}">
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <h6 class="mb-0 fw-semibold">
+                                                <i class="fas fa-cube me-1"></i>
+                                                Variant {{ forloop.counter }}
+                                                {% if vform.instance.pk %}
+                                                    <small class="text-muted">(ID: {{ vform.instance.id }})</small>
+                                                {% else %}
+                                                    <small class="text-success">(New)</small>
+                                                {% endif %}
+                                            </h6>
+                                            <div class="d-flex gap-2">
+                                                {% if vform.instance.pk %}
+                                                <a href="{% url 'variant_edit' product.id vform.instance.id %}"
+                                                   class="btn btn-sm btn-outline-primary" title="Edit separately" target="_blank">
+                                                    <i class="fas fa-external-link-alt"></i>
+                                                </a>
+                                                {% endif %}
+                                                {% if vform.DELETE and vform.instance.pk %}
+                                                <button type="button"
+                                                        class="btn btn-sm btn-danger delete-variant-btn"
+                                                        title="Delete this variant"
+                                                        onclick="toggleDeleteVariant(this)">
+                                                    <i class="fas fa-trash me-1"></i>Delete
+                                                </button>
+                                                <div style="display:none;">{{ vform.DELETE }}</div>
+                                                {% endif %}
+                                                {% if not forloop.first and not vform.instance.pk %}
+                                                <button type="button" class="btn btn-sm btn-outline-danger remove-variant">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <div class="row g-3">
+                                            <div class="col-md-4">
+                                                <label class="form-label fw-semibold">Volume (ml) <span class="text-danger">*</span></label>
+                                                {{ vform.volume_ml }}
+                                                {% if vform.volume_ml.errors %}<div class="text-danger small mt-1">{{ vform.volume_ml.errors }}</div>{% endif %}
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label fw-semibold">Gender <span class="text-danger">*</span></label>
+                                                {{ vform.gender }}
+                                                {% if vform.gender.errors %}<div class="text-danger small mt-1">{{ vform.gender.errors }}</div>{% endif %}
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label fw-semibold">SKU</label>
+                                                {{ vform.sku }}
+                                                <div class="form-text"></div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-semibold">Price (₹) <span class="text-danger">*</span></label>
+                                                {{ vform.price }}
+                                                {% if vform.price.errors %}<div class="text-danger small mt-1">{{ vform.price.errors }}</div>{% endif %}
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-semibold">Discount Price (₹) <span class="text-muted small"></span></label>
+                                                {{ vform.discount_price }}
+                                                <div class="form-text"></div>
+                                                {% if vform.discount_price.errors %}<div class="text-danger small mt-1">{{ vform.discount_price.errors }}</div>{% endif %}
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-semibold">Stock <span class="text-danger">*</span></label>
+                                                {{ vform.stock }}
+                                                {% if vform.stock.errors %}<div class="text-danger small mt-1">{{ vform.stock.errors }}</div>{% endif %}
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-semibold d-block">Status</label>
+                                                <div class="form-check form-switch mt-2">
+                                                    {{ vform.is_active }}
+                                                    <label class="form-check-label" for="{{ vform.is_active.id_for_label }}">Active</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {{ vform.id }}
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                <div class="text-center mt-3">
+                                    <button type="button" class="btn btn-outline-primary" id="add-variant">
+                                        <i class="fas fa-plus me-2"></i>Add Another Variant
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Right Column -->
+                    <div class="col-lg-4">
+                        <!-- Product Summary -->
+                        <div class="admin-card mb-4">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0 text-dark"><i class="fas fa-chart-bar me-2"></i>Summary</h5>
+                            </div>
+                            <div class="card-body small">
+                                <div class="d-flex justify-content-between mb-2 pb-2 border-bottom">
+                                    <span class="text-muted">ID</span><strong>#{{ product.id }}</strong>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2 pb-2 border-bottom">
+                                    <span class="text-muted">SKU</span><code>{{ product.sku }}</code>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2 pb-2 border-bottom">
+                                    <span class="text-muted">Price Range</span>
+                                    <strong class="text-success">
+                                        {% if product.min_price == product.max_price %}₹{{ product.min_price }}
+                                        {% else %}₹{{ product.min_price }}–₹{{ product.max_price }}{% endif %}
+                                    </strong>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2 pb-2 border-bottom">
+                                    <span class="text-muted">Total Stock</span>
+                                    <span class="badge {% if product.total_stock > 10 %}bg-success{% elif product.total_stock > 0 %}bg-warning{% else %}bg-danger{% endif %}">
+                                        {{ product.total_stock }}
+                                    </span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2 pb-2 border-bottom">
+                                    <span class="text-muted">Category</span><strong>{{ product.category.name }}</strong>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2 pb-2 border-bottom">
+                                    <span class="text-muted">Created</span><small>{{ product.created_at|date:"M d, Y" }}</small>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span class="text-muted">Updated</span><small>{{ product.updated_at|date:"M d, Y" }}</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Product Status -->
+                        <div class="admin-card mb-4">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0 text-dark"><i class="fas fa-toggle-on me-2"></i>Product Status</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-check form-switch mb-3">
+                                    {{ form.is_active }}
+                                    <label class="form-check-label fw-semibold" for="{{ form.is_active.id_for_label }}">Active</label>
+                                    <div class="form-text">Visible to customers</div>
+                                </div>
+                                <div class="form-check form-switch mb-3">
+                                    {{ form.is_featured }}
+                                    <label class="form-check-label fw-semibold" for="{{ form.is_featured.id_for_label }}">Featured</label>
+                                    <div class="form-text">Show on homepage</div>
+                                </div>
+                                <div class="form-check form-switch mb-3">
+                                    {{ form.is_best_selling }}
+                                    <label class="form-check-label fw-semibold" for="{{ form.is_best_selling.id_for_label }}">Best Selling</label>
+                                </div>
+                                <div class="form-check form-switch mb-3">
+                                    {{ form.is_new_arrival }}
+                                    <label class="form-check-label fw-semibold" for="{{ form.is_new_arrival.id_for_label }}">New Arrival</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="admin-card">
+                            <div class="card-body">
+                                <div class="d-grid gap-2">
+                                    <button type="submit" class="btn btn-primary btn-lg">
+                                        <i class="fas fa-save me-2"></i>Update Product
+                                    </button>
+                                    <a href="{% url 'product_list' %}" class="btn btn-outline-secondary">
+                                        <i class="fas fa-arrow-left me-2"></i>Back to Products
+                                    </a>
+                                    <a href="{% url 'product_soft_delete' product.id %}"
+                                       class="btn btn-outline-danger"
+                                       onclick="return confirm('Move this product to trash?')">
+                                        <i class="fas fa-trash me-2"></i>Move to Trash
+                                    </a>
+                                    
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Crop Modal -->
+<div class="image-crop-container" id="cropModal">
+    <div class="crop-modal">
+        <h5 class="mb-3">Crop & Resize Image</h5>
+        <div class="alert alert-info py-2 small"><i class="fas fa-info-circle me-1"></i>Drag to select area. Recommended: Square (1:1)</div>
+        <div class="row">
+            <div class="col-md-8"><img id="cropImage" src="" alt="Crop"></div>
+            <div class="col-md-4">
+                <h6>Preview</h6>
+                <div class="crop-preview"></div>
+                <div class="mt-3">
+                    <label class="form-label small">Aspect Ratio</label>
+                    <select class="form-select form-select-sm" id="aspectRatio">
+                        <option value="1">Square (1:1)</option>
+                        <option value="4/3">Landscape (4:3)</option>
+                        <option value="3/4">Portrait (3:4)</option>
+                        <option value="0">Free</option>
+                    </select>
+                </div>
+                <div class="mt-3 d-grid gap-2">
+                    <button type="button" class="btn btn-success btn-sm" onclick="cropImage()">
+                        <i class="fas fa-check me-1"></i>Apply Crop
+                    </button>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="closeCropModal()">
+                        <i class="fas fa-times me-1"></i>Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/cropperjs/dist/cropper.min.js"></script>
+<script>
+let currentCropper = null, originalFile = null;
+
+document.addEventListener('DOMContentLoaded', function () {
+
+    // Main image preview
+    const mainInput = document.querySelector('input[name="main_image"]');
+    if (mainInput) {
+        mainInput.addEventListener('change', function () {
+            if (this.files && this.files[0]) {
+                originalFile = this.files[0];
+                const reader = new FileReader();
+                reader.onload = e => {
+                    document.getElementById('mainImagePreviewImg').src = e.target.result;
+                    document.getElementById('mainImagePreview').style.display = 'block';
+                };
+                reader.readAsDataURL(this.files[0]);
+            }
+        });
+    }
+
+    // Additional images preview
+    const imagesInput = document.getElementById('images');
+    const newPreview = document.getElementById('newPreview');
+    if (imagesInput) {
+        imagesInput.addEventListener('change', function () {
+            if (!this.files.length) { newPreview.style.display = 'none'; return; }
+            newPreview.style.display = 'block';
+            newPreview.innerHTML = '';
+            const row = document.createElement('div');
+            row.className = 'row g-2';
+            Array.from(this.files).forEach((file, i) => {
+                if (!file.type.startsWith('image/')) return;
+                const reader = new FileReader();
+                reader.onload = e => {
+                    const col = document.createElement('div');
+                    col.className = 'col-auto text-center';
+                    col.innerHTML = `<img src="${e.target.result}" class="img-thumbnail" style="height:80px;width:80px;object-fit:cover;"><div class="small text-success">New ${i+1}</div>`;
+                    row.appendChild(col);
+                };
+                reader.readAsDataURL(file);
+            });
+            newPreview.appendChild(row);
+        });
+    }
+
+    // Add / Remove variant
+    const addBtn = document.getElementById('add-variant');
+    const variantForms = document.getElementById('variant-forms');
+    const totalForms = document.getElementById('id_variants-TOTAL_FORMS');
+
+    if (addBtn && variantForms && totalForms) {
+        addBtn.addEventListener('click', function () {
+            const formNum = parseInt(totalForms.value);
+            const first = variantForms.querySelector('.variant-form');
+            if (!first) return;
+            const newForm = first.cloneNode(true);
+
+            newForm.innerHTML = newForm.innerHTML.replace(/variants-\d+-/g, `variants-${formNum}-`);
+            newForm.querySelectorAll('input, select, textarea').forEach(el => {
+                if (el.id) el.id = el.id.replace(/-\d+-/, `-${formNum}-`);
+                if (el.name && !el.name.includes('TOTAL_FORMS') && !el.name.includes('INITIAL_FORMS')) {
+                    if (el.type === 'checkbox') el.checked = el.name.includes('is_active');
+                    else if (el.type !== 'file') el.value = '';
+                }
+            });
+            newForm.querySelectorAll('label').forEach(l => {
+                if (l.getAttribute('for')) l.setAttribute('for', l.getAttribute('for').replace(/-\d+-/, `-${formNum}-`));
+            });
+
+            // Update heading
+            const h6 = newForm.querySelector('h6');
+            if (h6) h6.innerHTML = `<i class="fas fa-cube me-1"></i>Variant ${formNum + 1} <small class="text-success">(New)</small>`;
+
+            // Remove edit link and delete button from new form, add remove button
+            newForm.querySelector('a[href*="variant_edit"]')?.remove();
+            newForm.querySelector('.delete-variant-btn')?.remove();
+            newForm.querySelector('div[style*="display:none"]')?.remove();
+
+            let removeBtn = newForm.querySelector('.remove-variant');
+            if (!removeBtn) {
+                const hdr = newForm.querySelector('.d-flex');
+                removeBtn = document.createElement('button');
+                removeBtn.type = 'button';
+                removeBtn.className = 'btn btn-sm btn-outline-danger remove-variant';
+                removeBtn.innerHTML = '<i class="fas fa-times"></i>';
+                hdr.appendChild(removeBtn);
+            }
+
+            variantForms.appendChild(newForm);
+            totalForms.value = formNum + 1;
+            newForm.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        });
+
+        variantForms.addEventListener('click', function (e) {
+            if (e.target.closest('.remove-variant')) {
+                e.target.closest('.variant-form')?.remove();
+                totalForms.value = parseInt(totalForms.value) - 1;
+            }
+        });
+    }
+
+    // Discount price validation
+    document.addEventListener('input', function (e) {
+        if (e.target.matches('input[name*="discount_price"]')) {
+            const vf = e.target.closest('.variant-form');
+            const price = parseFloat(vf?.querySelector('input[name*="price"]')?.value) || 0;
+            const disc = parseFloat(e.target.value) || 0;
+            if (disc > 0 && disc > price) {
+                e.target.classList.add('is-invalid');
+            } else {
+                e.target.classList.remove('is-invalid');
+            }
+        }
+    });
+});
+
+function toggleDeleteVariant(btn) {
+    const vf = btn.closest('.variant-form');
+    const checkbox = vf.querySelector('input[name*="DELETE"]');
+    if (!checkbox) return;
+    const isDeleting = !checkbox.checked;
+    checkbox.checked = isDeleting;
+    if (isDeleting) {
+        btn.innerHTML = '<i class="fas fa-undo me-1"></i>Undo';
+        btn.classList.remove('btn-danger');
+        btn.classList.add('btn-warning');
+        vf.style.opacity = '0.5';
+        vf.style.borderLeftColor = '#dc3545';
+    } else {
+        btn.innerHTML = '<i class="fas fa-trash me-1"></i>Delete';
+        btn.classList.remove('btn-warning');
+        btn.classList.add('btn-danger');
+        vf.style.opacity = '1';
+        vf.style.borderLeftColor = '';
+    }
+}
+
+function openCropModal(type) {
+    const img = document.getElementById('mainImagePreviewImg');
+    if (!img || !img.src) { alert('Please select an image first.'); return; }
+    document.getElementById('cropImage').src = img.src;
+    document.getElementById('cropModal').style.display = 'flex';
+    setTimeout(() => {
+        if (currentCropper) currentCropper.destroy();
+        currentCropper = new Cropper(document.getElementById('cropImage'), {
+            aspectRatio: 1, viewMode: 1, preview: '.crop-preview', autoCropArea: 0.8
+        });
+        document.getElementById('aspectRatio').onchange = function () {
+            currentCropper.setAspectRatio(this.value === '0' ? NaN : eval(this.value));
+        };
+    }, 100);
+}
+
+function cropImage() {
+    if (!currentCropper) return;
+    currentCropper.getCroppedCanvas({ width: 800, height: 800, fillColor: '#fff' }).toBlob(blob => {
+        const file = new File([blob], originalFile?.name || 'cropped.jpg', { type: 'image/jpeg' });
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        document.querySelector('input[name="main_image"]').files = dt.files;
+        document.getElementById('mainImagePreviewImg').src = URL.createObjectURL(file);
+        closeCropModal();
+    }, 'image/jpeg', 0.9);
+}
+
+function closeCropModal() {
+    document.getElementById('cropModal').style.display = 'none';
+    if (currentCropper) { currentCropper.destroy(); currentCropper = null; }
+}
+
+document.getElementById('cropModal')?.addEventListener('click', e => { if (e.target === e.currentTarget) closeCropModal(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeCropModal(); });
+</script>
+{% endblock %}

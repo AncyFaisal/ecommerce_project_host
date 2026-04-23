@@ -1,0 +1,267 @@
+{% extends "common_admin.html" %}
+{% load static %}
+
+{% block page_title %}Add New Category{% endblock %}
+
+{% block extra_css %}
+<style>
+    .field-error {
+        font-size: 0.78rem;
+        color: #dc3545;
+        margin-top: 4px;
+        display: none;
+        align-items: center;
+        gap: 4px;
+    }
+    .field-error.visible { display: flex; }
+
+    .form-control.is-valid   { border-color: #198754 !important; box-shadow: 0 0 0 3px rgba(25,135,84,0.1) !important; }
+    .form-control.is-invalid { border-color: #dc3545 !important; box-shadow: 0 0 0 3px rgba(220,53,69,0.1) !important; }
+
+    .char-counter {
+        font-size: 0.73rem;
+        color: #aaa;
+        text-align: right;
+        margin-top: 3px;
+    }
+    .char-counter.warn { color: #dc3545; }
+
+    .name-hint {
+        font-size: 0.75rem;
+        color: #888;
+        margin-top: 3px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="admin-card">
+        <div class="card-header">
+            <h3 class="mb-0">
+                <i class="fas fa-plus me-2"></i>Add New Category
+            </h3>
+        </div>
+
+        <div class="card-body">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <form method="post" id="categoryForm" novalidate>
+                {% csrf_token %}
+
+                <div class="row justify-content-center">
+                    <div class="col-lg-6">
+                        <div class="admin-card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Category Details</h5>
+                            </div>
+                            <div class="card-body">
+
+                                <!-- Category Name -->
+                                <div class="mb-4">
+                                    <label for="{{ form.name.id_for_label }}" class="form-label fw-semibold">
+                                        Category Name <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="text"
+                                           id="{{ form.name.id_for_label }}"
+                                           name="name"
+                                           class="form-control {% if form.name.errors %}is-invalid{% endif %}"
+                                           placeholder="e.g. Men's Fragrances"
+                                           value="{{ form.name.value|default:'' }}"
+                                           maxlength="100"
+                                           autocomplete="off">
+
+                                    {% if form.name.errors %}
+                                        {% for error in form.name.errors %}
+                                            <div class="field-error visible">
+                                                <i class="fas fa-exclamation-circle"></i>{{ error }}
+                                            </div>
+                                        {% endfor %}
+                                    {% else %}
+                                        <div class="field-error" id="name-error"></div>
+                                    {% endif %}
+
+                                    <div class="name-hint">
+                                        3–100 characters. Letters, numbers, spaces, hyphens, &amp;, apostrophes, and parentheses allowed.
+                                    </div>
+                                    <div class="char-counter" id="name-counter">0 / 100</div>
+                                </div>
+
+                                <!-- Description -->
+                                <div class="mb-4">
+                                    <label for="{{ form.description.id_for_label }}" class="form-label fw-semibold">
+                                        Description
+                                    </label>
+                                    <textarea id="{{ form.description.id_for_label }}"
+                                              name="description"
+                                              class="form-control {% if form.description.errors %}is-invalid{% endif %}"
+                                              placeholder="Enter category description (optional)"
+                                              rows="4"
+                                              maxlength="500">{{ form.description.value|default:'' }}</textarea>
+
+                                    {% if form.description.errors %}
+                                        {% for error in form.description.errors %}
+                                            <div class="field-error visible">
+                                                <i class="fas fa-exclamation-circle"></i>{{ error }}
+                                            </div>
+                                        {% endfor %}
+                                    {% else %}
+                                        <div class="field-error" id="desc-error"></div>
+                                    {% endif %}
+                                    <div class="char-counter" id="desc-counter">0 / 500</div>
+                                </div>
+
+                                <!-- Category Status -->
+                                <div class="mb-4">
+                                    <label class="form-label fw-semibold d-block">Status</label>
+                                    <div class="form-check form-switch">
+                                        {{ form.is_active }}
+                                        <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                                            Active
+                                        </label>
+                                    </div>
+                                    <div class="form-text">Active categories are visible to customers.</div>
+                                </div>
+
+                                <!-- Actions -->
+                                <div class="d-flex gap-2 mt-4">
+                                    <button type="submit" class="btn btn-primary flex-fill" id="submitBtn">
+                                        <i class="fas fa-plus me-2"></i>Create Category
+                                    </button>
+                                    <a href="{% url 'category_manage' %}" class="btn btn-outline-secondary flex-fill">
+                                        <i class="fas fa-arrow-left me-2"></i>Cancel
+                                    </a>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    const nameInput    = document.getElementById('id_name');
+    const nameError    = document.getElementById('name-error');
+    const nameCounter  = document.getElementById('name-counter');
+    const descInput    = document.getElementById('id_description');
+    const descError    = document.getElementById('desc-error');
+    const descCounter  = document.getElementById('desc-counter');
+
+    // ── Helpers ──────────────────────────────────────────────────────────────
+    function showError(input, errEl, msg) {
+        input.classList.remove('is-valid');
+        input.classList.add('is-invalid');
+        if (errEl) {
+            errEl.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + msg;
+            errEl.classList.add('visible');
+        }
+    }
+    function showValid(input, errEl) {
+        input.classList.remove('is-invalid');
+        input.classList.add('is-valid');
+        if (errEl) { errEl.classList.remove('visible'); errEl.innerHTML = ''; }
+    }
+    function clearState(input, errEl) {
+        input.classList.remove('is-valid', 'is-invalid');
+        if (errEl) { errEl.classList.remove('visible'); errEl.innerHTML = ''; }
+    }
+
+    // ── Name validator ────────────────────────────────────────────────────────
+    function validateName() {
+        const val = nameInput.value.trim();
+
+        if (!val) {
+            showError(nameInput, nameError, 'Category name is required.');
+            return false;
+        }
+        if (val.length < 3) {
+            showError(nameInput, nameError, 'Must be at least 3 characters.');
+            return false;
+        }
+        if (val.length > 100) {
+            showError(nameInput, nameError, 'Cannot exceed 100 characters.');
+            return false;
+        }
+        if (!/^[a-zA-Z0-9]/.test(val)) {
+            showError(nameInput, nameError, 'Must start with a letter or number.');
+            return false;
+        }
+        if (!/^[a-zA-Z0-9][a-zA-Z0-9\s\-&'().]*$/.test(val)) {
+            showError(nameInput, nameError, "Only letters, numbers, spaces, hyphens, &, apostrophes, and parentheses allowed.");
+            return false;
+        }
+        if (/\s{2,}/.test(val)) {
+            showError(nameInput, nameError, 'Consecutive spaces are not allowed.');
+            return false;
+        }
+        showValid(nameInput, nameError);
+        return true;
+    }
+
+    // ── Description validator ─────────────────────────────────────────────────
+    function validateDesc() {
+        const val = descInput.value;
+        if (val.length > 500) {
+            showError(descInput, descError, 'Description cannot exceed 500 characters.');
+            return false;
+        }
+        if (val.trim()) showValid(descInput, descError);
+        else clearState(descInput, descError);
+        return true;
+    }
+
+    // ── Character counters ────────────────────────────────────────────────────
+    function updateCounter(input, counterEl, max) {
+        const len = input.value.length;
+        counterEl.textContent = len + ' / ' + max;
+        counterEl.classList.toggle('warn', len > max * 0.9);
+    }
+
+    // ── Live events ───────────────────────────────────────────────────────────
+    nameInput.addEventListener('input', function () {
+        updateCounter(this, nameCounter, 100);
+        const val = this.value.trim();
+        if (!val) { clearState(this, nameError); return; }
+        validateName();
+    });
+    nameInput.addEventListener('blur', validateName);
+
+    descInput.addEventListener('input', function () {
+        updateCounter(this, descCounter, 500);
+        validateDesc();
+    });
+    descInput.addEventListener('blur', validateDesc);
+
+    // Initialise counters with pre-filled values (edit mode / validation failure)
+    updateCounter(nameInput, nameCounter, 100);
+    updateCounter(descInput, descCounter, 500);
+
+    // ── Submit guard ──────────────────────────────────────────────────────────
+    document.getElementById('categoryForm').addEventListener('submit', function (e) {
+        const nameOk = validateName();
+        const descOk = validateDesc();
+
+        if (!nameOk || !descOk) {
+            e.preventDefault();
+            document.querySelector('.is-invalid')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return;
+        }
+
+        const btn = document.getElementById('submitBtn');
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Creating...';
+        btn.disabled = true;
+    });
+})();
+</script>
+{% endblock %}
