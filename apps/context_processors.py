@@ -8,35 +8,28 @@ User = get_user_model()
 
 def wallet_balance(request):
     """Context processor that auto-creates wallet if missing"""
-    if request.user.is_authenticated:
-        try:
-            # ========== FIX: Auto-create wallet if it doesn't exist ==========
-            wallet, created = Wallet.objects.get_or_create(
-                user=request.user, 
-                defaults={'balance': 0}
-            )
-            
-            if created:
-                print(f"✅ Auto-created wallet for user {request.user.id} via context processor")
-            
-            return {'wallet_balance': wallet.balance}
-            # ========== END FIX ==========
-            
-        except Exception as e:
-            # Log the error for debugging
-            print(f"Wallet context processor error: {e}")
-            return {'wallet_balance': 0}
-    
-    return {'wallet_balance': 0}
+    if not hasattr(request, 'user') or not request.user.is_authenticated:
+        return {'wallet_balance': 0}
+    try:
+        wallet, created = Wallet.objects.get_or_create(
+            user=request.user,
+            defaults={'balance': 0}
+        )
+        return {'wallet_balance': wallet.balance}
+    except Exception:
+        return {'wallet_balance': 0}
 
 
 def cart_and_wishlist_context(request):
-    """
-    Consolidated context processor for both cart and wishlist
-    """
-    context = {}
-    
-    if request.user.is_authenticated:
+    """Consolidated context processor for both cart and wishlist"""
+    context = {
+        'cart_item_count': 0, 'cart_items_count': 0,
+        'wishlist_count': 0, 'wishlist_items_count': 0,
+        'wishlist_product_ids': [], 'wishlist_variant_ids': [],
+    }
+
+    if not hasattr(request, 'user') or not request.user.is_authenticated:
+        return context
         # Cart count
         try:
             cart = Cart.objects.get(user=request.user)
@@ -70,32 +63,30 @@ def cart_and_wishlist_context(request):
 
 def offer_context(request):
     """Add offer information to all templates"""
-    now = timezone.now()
-    
-    # Get active offers
-    active_product_offers = ProductOffer.objects.filter(
-        is_active=True,
-        valid_from__lte=now,
-        valid_to__gte=now
-    ).prefetch_related('products')
-    
-    active_category_offers = CategoryOffer.objects.filter(
-        is_active=True,
-        valid_from__lte=now,
-        valid_to__gte=now
-    ).select_related('category')
-    
-    return {
-        'now': now,
-        'active_product_offers': active_product_offers,
-        'active_category_offers': active_category_offers,
-    }
+    try:
+        now = timezone.now()
+        active_product_offers = ProductOffer.objects.filter(
+            is_active=True, valid_from__lte=now, valid_to__gte=now
+        ).prefetch_related('products')
+        active_category_offers = CategoryOffer.objects.filter(
+            is_active=True, valid_from__lte=now, valid_to__gte=now
+        ).select_related('category')
+        return {
+            'now': now,
+            'active_product_offers': active_product_offers,
+            'active_category_offers': active_category_offers,
+        }
+    except Exception:
+        return {'now': timezone.now(), 'active_product_offers': [], 'active_category_offers': []}
+
 
 def admin_context(request):
-    if request.user.is_staff:
+    if not hasattr(request, 'user') or not request.user.is_staff:
+        return {}
+    try:
         pending_refunds_count = WalletTransaction.objects.filter(
-            transaction_type='REFUND',
-            status='PENDING'
+            transaction_type='REFUND', status='PENDING'
         ).count()
         return {'pending_refunds_count': pending_refunds_count}
-    return {}
+    except Exception:
+        return {}
