@@ -8,6 +8,9 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
+# Add sslserver only in development
+INSTALLED_APPS += ['sslserver']
+
 # ngrok support - update this with your current ngrok URL
 CSRF_TRUSTED_ORIGINS = [
     'https://*.ngrok-free.app',
