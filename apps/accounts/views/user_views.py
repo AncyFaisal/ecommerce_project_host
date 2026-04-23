@@ -411,7 +411,7 @@ def verify_reset_otp(request):
 
         if not record:
             messages.error(request, "OTP expired or not found. Please resend and try again.")
-            return redirect("verify_reset_otp")
+            return redirect("verify_otp")
 
         if str(otp_entered) != str(record["otp"]):
             messages.error(request, "Invalid OTP.")
