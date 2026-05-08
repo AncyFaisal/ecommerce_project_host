@@ -380,30 +380,137 @@
         color: white;
     }
     
-    /* Notification */
-    .cart-notification {
+    /* Alert Popup Modal */
+    .cart-alert-overlay {
         position: fixed;
-        top: 100px;
-        right: 20px;
-        padding: 12px 20px;
-        border-radius: 12px;
-        color: white;
-        z-index: 9999;
-        max-width: 350px;
-        animation: slideIn 0.3s ease;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        font-size: 0.9rem;
+        inset: 0;
+        background: rgba(43, 18, 8, 0.45);
+        backdrop-filter: blur(3px);
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        animation: overlayFadeIn 0.2s ease;
     }
-    
-    @keyframes slideIn {
-        from {
-            transform: translateX(100%);
-            opacity: 0;
-        }
-        to {
-            transform: translateX(0);
-            opacity: 1;
-        }
+
+    .cart-alert-overlay.closing {
+        animation: overlayFadeOut 0.25s ease forwards;
+    }
+
+    .cart-alert-popup {
+        background: #fff;
+        border-radius: 20px;
+        width: 100%;
+        max-width: 400px;
+        overflow: hidden;
+        box-shadow: 0 20px 60px rgba(43, 18, 8, 0.25);
+        animation: popupBounceIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+        position: relative;
+    }
+
+    .cart-alert-overlay.closing .cart-alert-popup {
+        animation: popupFadeOut 0.25s ease forwards;
+    }
+
+    /* Top accent strip */
+    .cart-alert-strip {
+        height: 5px;
+        width: 100%;
+    }
+    .popup-success .cart-alert-strip { background: linear-gradient(90deg, #2e7d32, #43a047); }
+    .popup-error   .cart-alert-strip { background: linear-gradient(90deg, #c62828, #e53935); }
+    .popup-warning .cart-alert-strip { background: linear-gradient(90deg, #e65100, #fb8c00); }
+    .popup-info    .cart-alert-strip { background: linear-gradient(90deg, var(--primary-color), var(--accent-color)); }
+
+    .cart-alert-body {
+        padding: 28px 28px 24px;
+        text-align: center;
+    }
+
+    /* Big icon circle */
+    .cart-alert-icon-wrap {
+        width: 68px;
+        height: 68px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 16px;
+        font-size: 1.8rem;
+    }
+    .popup-success .cart-alert-icon-wrap { background: #e8f5e9; color: #2e7d32; }
+    .popup-error   .cart-alert-icon-wrap { background: #ffebee; color: #c62828; }
+    .popup-warning .cart-alert-icon-wrap { background: #fff3e0; color: #e65100; }
+    .popup-info    .cart-alert-icon-wrap { background: #fff8f0; color: var(--primary-color); }
+
+    .cart-alert-title {
+        font-family: 'Playfair Display', serif;
+        font-size: 1.2rem;
+        font-weight: 700;
+        margin-bottom: 8px;
+    }
+    .popup-success .cart-alert-title { color: #2e7d32; }
+    .popup-error   .cart-alert-title { color: #c62828; }
+    .popup-warning .cart-alert-title { color: #e65100; }
+    .popup-info    .cart-alert-title { color: var(--primary-color); }
+
+    .cart-alert-message {
+        font-size: 0.95rem;
+        color: #5a4a3a;
+        line-height: 1.6;
+        margin-bottom: 22px;
+    }
+
+    .cart-alert-ok-btn {
+        border: none;
+        border-radius: 50px;
+        padding: 10px 36px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.25s;
+        letter-spacing: 0.3px;
+    }
+    .popup-success .cart-alert-ok-btn { background: #2e7d32; color: #fff; }
+    .popup-success .cart-alert-ok-btn:hover { background: #1b5e20; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(46,125,50,0.3); }
+    .popup-error   .cart-alert-ok-btn { background: #c62828; color: #fff; }
+    .popup-error   .cart-alert-ok-btn:hover { background: #b71c1c; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(198,40,40,0.3); }
+    .popup-warning .cart-alert-ok-btn { background: #e65100; color: #fff; }
+    .popup-warning .cart-alert-ok-btn:hover { background: #bf360c; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(230,81,0,0.3); }
+    .popup-info    .cart-alert-ok-btn { background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); color: #fff; }
+    .popup-info    .cart-alert-ok-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(67,20,5,0.3); }
+
+    /* Progress bar at bottom */
+    .cart-alert-progress {
+        height: 4px;
+        background: #f0ebe6;
+        position: relative;
+        overflow: hidden;
+    }
+    .cart-alert-progress-bar {
+        position: absolute;
+        left: 0; top: 0; bottom: 0;
+        animation: alertProgress 3s linear forwards;
+    }
+    .popup-success .cart-alert-progress-bar { background: #2e7d32; }
+    .popup-error   .cart-alert-progress-bar { background: #c62828; }
+    .popup-warning .cart-alert-progress-bar { background: #e65100; }
+    .popup-info    .cart-alert-progress-bar { background: var(--accent-color); }
+
+    @keyframes overlayFadeIn  { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes overlayFadeOut { from { opacity: 1; } to { opacity: 0; } }
+    @keyframes popupBounceIn  {
+        from { transform: scale(0.7); opacity: 0; }
+        to   { transform: scale(1);   opacity: 1; }
+    }
+    @keyframes popupFadeOut {
+        from { transform: scale(1);   opacity: 1; }
+        to   { transform: scale(0.85); opacity: 0; }
+    }
+    @keyframes alertProgress {
+        from { width: 100%; }
+        to   { width: 0%; }
     }
     
     /* Loading Spinner */
@@ -508,6 +615,20 @@
 <div class="container pb-5">
     <!-- CSRF token for AJAX -->
     {% csrf_token %}
+
+    <!-- Django redirect messages (non-AJAX fallback) -->
+    {% if messages %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            {% for message in messages %}
+            showNotification(
+                "{{ message|escapejs }}",
+                "{% if message.tags == 'error' %}error{% elif message.tags == 'warning' %}warning{% elif message.tags == 'success' %}success{% else %}info{% endif %}"
+            );
+            {% endfor %}
+        });
+    </script>
+    {% endif %}
     
     {% if cart_items %}
         <div class="row g-4">
@@ -701,8 +822,8 @@
     {% endif %}
 </div>
 
-<!-- Hidden notification container -->
-<div id="notification-container" class="position-fixed top-0 end-0 p-3" style="z-index: 9999;"></div>
+<!-- Alert popup container -->
+<div id="notification-container"></div>
 {% endblock %}
 
 {% block extra_js %}
@@ -727,35 +848,57 @@ function getCSRFToken() {
     return cookieValue || '';
 }
 
-// Show notification
+// Show themed alert popup
 function showNotification(message, type = 'info') {
-    const container = document.getElementById('notification-container');
-    if (!container) return;
-    
-    const bgColor = type === 'success' ? '#28a745' : 
-                    type === 'error' ? '#dc3545' : 
-                    type === 'warning' ? '#ffc107' : '#17a2b8';
-    const textColor = type === 'warning' ? '#000' : '#fff';
-    
-    const notification = document.createElement('div');
-    notification.className = 'cart-notification';
-    notification.style.backgroundColor = bgColor;
-    notification.style.color = textColor;
-    notification.innerHTML = `
-        <div class="d-flex align-items-center">
-            <i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle'} me-2"></i>
-            <span>${message}</span>
-            <button type="button" class="btn-close btn-close-${textColor === '#fff' ? 'white' : 'black'} ms-3" style="font-size: 0.7rem;" onclick="this.parentElement.parentElement.remove()"></button>
+    // Close any existing popup first
+    const existing = document.querySelector('.cart-alert-overlay');
+    if (existing) existing.remove();
+
+    const config = {
+        success: { icon: 'fa-check-circle',      title: 'Success' },
+        error:   { icon: 'fa-times-circle',       title: 'Oops!'   },
+        warning: { icon: 'fa-exclamation-circle', title: 'Notice'  },
+        info:    { icon: 'fa-info-circle',         title: 'Info'    },
+    };
+    const { icon, title } = config[type] || config.info;
+
+    const overlay = document.createElement('div');
+    overlay.className = `cart-alert-overlay`;
+    overlay.innerHTML = `
+        <div class="cart-alert-popup popup-${type}">
+            <div class="cart-alert-strip"></div>
+            <div class="cart-alert-body">
+                <div class="cart-alert-icon-wrap">
+                    <i class="fas ${icon}"></i>
+                </div>
+                <div class="cart-alert-title">${title}</div>
+                <div class="cart-alert-message">${message}</div>
+                <button class="cart-alert-ok-btn" onclick="closeAlertPopup()">OK</button>
+            </div>
+            <div class="cart-alert-progress">
+                <div class="cart-alert-progress-bar"></div>
+            </div>
         </div>
     `;
-    
-    container.appendChild(notification);
-    
-    setTimeout(() => {
-        if (notification.parentNode) {
-            notification.remove();
-        }
-    }, 3000);
+
+    document.getElementById('notification-container').appendChild(overlay);
+
+    // Close on overlay click (outside popup)
+    overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) closeAlertPopup();
+    });
+
+    // Auto-close after 3s
+    overlay._autoClose = setTimeout(closeAlertPopup, 3000);
+}
+
+function closeAlertPopup() {
+    const overlay = document.querySelector('.cart-alert-overlay');
+    if (!overlay || overlay._closing) return;
+    overlay._closing = true;
+    if (overlay._autoClose) clearTimeout(overlay._autoClose);
+    overlay.classList.add('closing');
+    setTimeout(() => overlay.remove(), 260);
 }
 
 // Update cart badge in header
